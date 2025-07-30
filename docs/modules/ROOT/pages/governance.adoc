@@ -1,110 +1,110 @@
-= How to set up on-chain governance
+= 如何设置链上治理
 
-In this guide we will learn how OpenZeppelin’s Governor contract works, how to set it up, and how to use it to create proposals, vote for them, and execute them, using tools provided by Ethers.js and Tally.
+在本指南中，我们将学习 OpenZeppelin 的 Governor 合约如何工作，如何设置它，以及如何使用它来创建提案、投票以及执行提案，使用 Ethers.js 和 Tally 提供的工具。
 
-NOTE: Find detailed contract documentation at xref:api:governance.adoc[Governance API].
+NOTE: 请在 xref:api:governance.adoc[治理 API] 中查找详细的合约文档。
 
-== Introduction
+== 介绍
 
-Decentralized protocols are in constant evolution from the moment they are publicly released. Often, the initial team retains control of this evolution in the first stages, but eventually delegates it to a community of stakeholders. The process by which this community makes decisions is called on-chain governance, and it has become a central component of decentralized protocols, fueling varied decisions such as parameter tweaking, smart contract upgrades, integrations with other protocols, treasury management, grants, etc.
+去中心化协议从公开发布的那一刻起就不断发展。通常，最初的团队在最初阶段保留对这种演变的控制权，但最终会将其委托给利益相关者社区。这个社区做出决定的过程称为链上治理，它已成为去中心化协议的核心组成部分，推动各种决策，例如参数调整、智能合约升级、与其他协议的集成、资金库管理、赠款等等。
 
-This governance protocol is generally implemented in a special-purpose contract called “Governor”. The GovernorAlpha and GovernorBravo contracts designed by Compound have been very successful and popular so far, with the downside that projects with different requirements have had to fork the code to customize it for their needs, which can pose a high risk of introducing security issues. For OpenZeppelin Contracts, we set out to build a modular system of Governor contracts so that forking is not needed, and different requirements can be accommodated by writing small modules using Solidity inheritance. You will find the most common requirements out of the box in OpenZeppelin Contracts, but writing additional ones is simple, and we will be adding new features as requested by the community in future releases. Additionally, the design of OpenZeppelin Governor requires minimal use of storage and results in more gas efficient operation.
+此治理协议通常在称为“Governor”的专用合约中实现。Compound 设计的 GovernorAlpha 和 GovernorBravo 合约迄今为止非常成功和流行，但缺点是具有不同要求的项目必须 fork 代码以根据其需求进行自定义，这可能会带来引入安全问题的风险。对于 OpenZeppelin Contracts，我们着手构建一个模块化的 Governor 合约系统，以便不需要 forking，并且可以通过使用 Solidity 继承编写小型模块来满足不同的需求。您将在 OpenZeppelin Contracts 中找到最常见的开箱即用需求，但编写额外的需求很简单，并且我们将在未来的版本中添加社区要求的新功能。此外，OpenZeppelin Governor 的设计需要最少的存储使用，并能实现更高效的 gas 利用率。
 
-== Compatibility
+== 兼容性
 
-OpenZeppelin’s Governor system was designed with a concern for compatibility with existing systems that were based on Compound’s GovernorAlpha and GovernorBravo. Because of this, you will find that many modules are presented in two variants, one of which is built for compatibility with those systems.
+OpenZeppelin 的 Governor 系统在设计时考虑了与基于 Compound 的 GovernorAlpha 和 GovernorBravo 的现有系统的兼容性。因此，您会发现许多模块都以两种变体呈现，其中一种变体是为与这些系统兼容而构建的。
 
 === ERC20Votes & ERC20VotesComp
 
-The ERC-20 extension to keep track of votes and vote delegation is one such case. The shorter one is the more generic version because it can support token supplies greater than 2^96, while the “Comp” variant is limited in that regard, but exactly fits the interface of the COMP token that is used by GovernorAlpha and Bravo. Both contract variants share the same events, so they are fully compatible when looking at events only.
+用于跟踪投票和投票委托的 ERC-20 扩展就是这种情况。较短的版本是更通用的版本，因为它支持大于 2^96 的 token 供应，而“Comp”变体在这方面受到限制，但完全符合 GovernorAlpha 和 Bravo 使用的 COMP token 的接口。两个合约变体都共享相同的事件，因此仅在查看事件时它们是完全兼容的。
 
 === Governor & GovernorStorage
 
-An OpenZeppelin Governor contract is not interface-compatible with Compound's GovernorAlpha or Bravo. Even though events are fully compatible, proposal lifecycle functions (creation, execution, etc.) have different signatures that are meant to optimize storage use. Other functions from GovernorAlpha and Bravo are likewise not available. It’s possible to opt in some Bravo-like behavior by inheriting from the GovernorStorage module. This module provides proposal enumerability and alternate versions of the `queue`, `execute` and `cancel` function that only take the proposal id. This module reduces the calldata needed by some operations in exchange for an increased storage footprint. This might be a good trade-off for some L2 chains. It also provides primitives for indexer-free frontends.
+OpenZeppelin Governor 合约与 Compound 的 GovernorAlpha 或 Bravo 不兼容接口。即使事件完全兼容，提案生命周期函数（创建、执行等）也具有不同的签名，旨在优化存储使用。GovernorAlpha 和 Bravo 的其他功能同样不可用。可以通过继承 GovernorStorage 模块来选择加入一些类似 Bravo 的行为。此模块提供提案可枚举性和 `queue`、`execute` 和 `cancel` 函数的替代版本，这些函数仅采用提案 ID。此模块减少了某些操作所需的 calldata，从而增加了存储占用空间。对于某些 L2 链来说，这可能是一个很好的权衡。它还为无索引器前端提供原语。
 
-Note that even with the use of this module, one important difference with Compound's GovernorBravo is the way that `proposalId`s are calculated. Governor uses the hash of the proposal parameters with the purpose of keeping its data off-chain by event indexing, while the original Bravo implementation uses sequential `proposalId`s.
+请注意，即使使用此模块，与 Compound 的 GovernorBravo 的一个重要区别在于 `proposalId` 的计算方式。Governor 使用提案参数的哈希值，目的是通过事件索引将数据保留在链下，而原始 Bravo 实现使用连续的 `proposalId`。
 
 === GovernorTimelockControl & GovernorTimelockCompound
 
-When using a timelock with your Governor contract, you can use either OpenZeppelin’s TimelockController or Compound’s Timelock. Based on the choice of timelock, you should choose the corresponding Governor module: GovernorTimelockControl or GovernorTimelockCompound respectively. This allows you to migrate an existing GovernorAlpha instance to an OpenZeppelin-based Governor without changing the timelock in use.
+将时间锁与您的 Governor 合约一起使用时，您可以使用 OpenZeppelin 的 TimelockController 或 Compound 的 Timelock。根据时间锁的选择，您应该选择相应的 Governor 模块：GovernorTimelockControl 或 GovernorTimelockCompound。这允许你将现有的 GovernorAlpha 实例迁移到基于 OpenZeppelin 的 Governor，而无需更改正在使用的时间锁。
 
 === Tally
 
-https://www.tally.xyz[Tally] is a full-fledged application for user owned on-chain governance. It comprises a voting dashboard, proposal creation wizard, real time research and analysis, and educational content.
+https://www.tally.xyz[Tally] 是一个用于用户拥有的链上治理的成熟应用程序。它包括投票仪表板、提案创建向导、实时研究和分析以及教育内容。
 
-For all of these options, the Governor will be compatible with Tally: users will be able to create proposals, see voting periods and delays following xref:api:interfaces.adoc#IERC6372[IERC6372], visualize voting power and advocates, navigate proposals, and cast votes. For proposal creation in particular, projects can also use https://docs.openzeppelin.com/defender/module/actions#transaction-proposals-reference[Defender Transaction Proposals] as an alternative interface.
+对于所有这些选项，Governor 将与 Tally 兼容：用户将能够创建提案，查看遵循 xref:api:interfaces.adoc#IERC6372[IERC6372] 的投票期和延迟，可视化投票权和倡导者，导航提案并进行投票。特别是对于提案创建，项目还可以使用 https://docs.openzeppelin.com/defender/module/actions#transaction-proposals-reference[Defender 交易提案] 作为替代接口。
 
-In the rest of this guide, we will focus on a fresh deploy of the vanilla OpenZeppelin Governor features without concern for compatibility with GovernorAlpha or Bravo.
+在本指南的其余部分，我们将重点介绍全新部署的 vanilla OpenZeppelin Governor 功能，而不考虑与 GovernorAlpha 或 Bravo 的兼容性。
 
-== Setup
+== 设置
 
 === Token
 
-The voting power of each account in our governance setup will be determined by an ERC-20 token. The token has to implement the ERC20Votes extension. This extension will keep track of historical balances so that voting power is retrieved from past snapshots rather than current balance, which is an important protection that prevents double voting.
+我们的治理设置中每个帐户的投票权将由 ERC-20 token 决定。该 token 必须实现 ERC20Votes 扩展。此扩展将跟踪历史余额，以便从过去的快照中检索投票权，而不是当前的余额，这是一种重要的保护措施，可防止重复投票。
 
 ```solidity
 include::api:example$governance/MyToken.sol[]
 ```
 
-If your project already has a live token that does not include ERC20Votes and is not upgradeable, you can wrap it in a governance token by using ERC20Wrapper. This will allow token holders to participate in governance by wrapping their tokens 1-to-1.
+如果你的项目已经拥有一个不包含 ERC20Votes 且不可升级的 live token，你可以使用 ERC20Wrapper 将其包装在治理 token 中。这将允许 token 持有者通过 1 对 1 包装其 token 来参与治理。
 
 ```solidity
 include::api:example$governance/MyTokenWrapped.sol[]
 ```
 
-NOTE: The only other source of voting power available in OpenZeppelin Contracts currently is xref:api:token/ERC721.adoc#ERC721Votes[`ERC721Votes`]. ERC-721 tokens that don't provide this functionality can be wrapped into a voting tokens using a combination of xref:api:token/ERC721.adoc#ERC721Votes[`ERC721Votes`] and xref:api:token/ERC721.adoc#ERC721Wrapper[`ERC721Wrapper`].
+NOTE: OpenZeppelin Contracts 中目前唯一可用的其他投票权来源是 xref:api:token/ERC721.adoc#ERC721Votes[`ERC721Votes`]。不提供此功能的 ERC-721 token 可以使用 xref:api:token/ERC721.adoc#ERC721Votes[`ERC721Votes`] 和 xref:api:token/ERC721.adoc#ERC721Wrapper[`ERC721Wrapper`] 的组合包装到投票 token 中。
 
-NOTE: The internal clock used by the token to store voting balances will dictate the operating mode of the Governor contract attached to it. By default, block numbers are used. Since v4.9, developers can override the xref:api:interfaces.adoc#IERC6372[IERC6372] clock to use timestamps instead of block numbers.
+NOTE: token 用于存储投票余额的内部时钟将决定附加到它的 Governor 合约的运行模式。默认情况下，使用区块编号。自 v4.9 以来，开发人员可以覆盖 xref:api:interfaces.adoc#IERC6372[IERC6372] 时钟以使用时间戳而不是区块编号。
 
 === Governor
 
-Initially, we will build a Governor without a timelock. The core logic is given by the Governor contract, but we still need to choose: 1) how voting power is determined, 2) how many votes are needed for quorum, 3) what options people have when casting a vote and how those votes are counted, and 4) what type of token should be used to vote. Each of these aspects is customizable by writing your own module, or more easily choosing one from OpenZeppelin Contracts.
+最初，我们将构建一个没有时间锁的 Governor。核心逻辑由 Governor 合约给出，但我们仍然需要选择：1) 如何确定投票权，2) 达到法定人数需要多少票数，3) 人们在投票时有哪些选择以及如何计算这些票数，以及 4) 应该使用什么类型的 token 进行投票。通过编写你自己的模块，或者更轻松地从 OpenZeppelin Contracts 中选择一个模块，可以自定义这些方面中的每一个。
 
-For 1) we will use the GovernorVotes module, which hooks to an IVotes instance to determine the voting power of an account based on the token balance they hold when a proposal becomes active. This module requires as a constructor parameter the address of the token. This module also discovers the clock mode (ERC-6372) used by the token and applies it to the Governor.
+对于 1)，我们将使用 GovernorVotes 模块，该模块连接到 IVotes 实例，以根据帐户在提案生效时持有的 token 余额来确定帐户的投票权。此模块需要 token 的地址作为构造函数参数。此模块还发现 token 使用的时钟模式 (ERC-6372) 并将其应用于 Governor。
 
-For 2) we will use GovernorVotesQuorumFraction which works together with ERC20Votes to define quorum as a percentage of the total supply at the block a proposal’s voting power is retrieved. This requires a constructor parameter to set the percentage. Most Governors nowadays use 4%, so we will initialize the module with parameter 4 (this indicates the percentage, resulting in 4%).
+对于 2)，我们将使用 GovernorVotesQuorumFraction，它与 ERC20Votes 协同工作，以将法定人数定义为提案投票权被检索的区块处总供应量的百分比。这需要一个构造函数参数来设置百分比。现在大多数 Governor 使用 4%，因此我们将使用参数 4 初始化模块（这表示百分比，导致 4%）。
 
-For 3) we will use GovernorCountingSimple, a module that offers 3 options to voters: For, Against, and Abstain, and where only For and Abstain votes are counted towards quorum.
+对于 3)，我们将使用 GovernorCountingSimple，该模块为选民提供 3 个选项：赞成、反对和弃权，并且只有赞成和弃权票被计入法定人数。
 
-Besides these modules, Governor itself has some parameters we must set.
+除了这些模块之外，Governor 本身还有一些我们必须设置的参数。
 
-votingDelay: How long after a proposal is created should voting power be fixed. A large voting delay gives users time to unstake tokens if necessary.
+votingDelay：提案创建后，投票权应该固定多长时间。较大的投票延迟让用户有时间在必要时取消 token 的质押。
 
-votingPeriod: How long does a proposal remain open to votes.
+votingPeriod：提案保持开放以供投票的时间。
 
-These parameters are specified in the unit defined in the token's clock. Assuming the token uses block numbers, and assuming block time of around 12 seconds, we will have set votingDelay = 1 day = 7200 blocks, and votingPeriod = 1 week = 50400 blocks.
+这些参数以 token 时钟中定义的单位指定。假设 token 使用区块编号，并且假设区块时间约为 12 秒，我们将设置 votingDelay = 1 天 = 7200 个区块，votingPeriod = 1 周 = 50400 个区块。
 
-We can optionally set a proposal threshold as well. This restricts proposal creation to accounts that have enough voting power.
+我们还可以选择设置提案阈值。这会将提案创建限制为具有足够投票权的帐户。
 
 ```solidity
 include::api:example$governance/MyGovernor.sol[]
 ```
 
-=== Timelock
+=== 时间锁
 
-It is good practice to add a timelock to governance decisions. This allows users to exit the system if they disagree with a decision before it is executed. We will use OpenZeppelin’s TimelockController in combination with the GovernorTimelockControl module.
+最好在治理决策中添加时间锁。这允许用户在决策执行之前退出系统（如果他们不同意该决策）。我们将 OpenZeppelin 的 TimelockController 与 GovernorTimelockControl 模块结合使用。
 
-IMPORTANT: When using a timelock, it is the timelock that will execute proposals and thus the timelock that should hold any funds, ownership, and access control roles. Before version 4.5 there was no way to recover funds in the Governor contract when using a timelock! Before version 4.3, when using the Compound Timelock, ETH in the timelock was not easily accessible.
+IMPORTANT: 使用时间锁时，将执行提案的是时间锁，因此应持有任何资金、所有权和访问控制角色的是时间锁。在 4.5 版本之前，使用时间锁时无法在 Governor 合约中恢复资金！在 4.3 版本之前，使用 Compound Timelock 时，时间锁中的 ETH 无法轻松访问。
 
-TimelockController uses an AccessControl setup that we need to understand in order to set up roles.
+TimelockController 使用访问控制设置，我们需要了解该设置才能设置角色。
 
-- The Proposer role is in charge of queueing operations: this is the role the Governor instance should be granted, and it should likely be the only proposer in the system.
-- The Executor role is in charge of executing already available operations: we can assign this role to the special zero address to allow anyone to execute (if operations can be particularly time sensitive, the Governor should be made Executor instead).
-- Lastly, there is the Admin role, which can grant and revoke the two previous roles: this is a very sensitive role that will be granted automatically to the timelock itself, and optionally to a second account, which can be used for ease of setup but should promptly renounce the role.
+- Proposer 角色负责对操作进行排队：这是应该授予 Governor 实例的角色，并且它可能是系统中唯一的 proposer。
+- Executor 角色负责执行已经可用的操作：我们可以将此角色分配给特殊的零地址，以允许任何人执行（如果操作的时间特别敏感，则应将 Governor 设置为 Executor）。
+- 最后，还有 Admin 角色，它可以授予和撤销之前的两个角色：这是一个非常敏感的角色，它将自动授予给时间锁本身，并且可以选择性地授予给第二个帐户，该帐户可用于轻松设置，但应立即放弃该角色。
 
-== Proposal Lifecycle
+== 提案生命周期
 
-Let’s walk through how to create and execute a proposal on our newly deployed Governor.
+让我们来看看如何在新建署的 Governor 上创建和执行提案。
 
-A proposal is a sequence of actions that the Governor contract will perform if it passes. Each action consists of a target address, calldata encoding a function call, and an amount of ETH to include. Additionally, a proposal includes a human-readable description.
+提案是 Governor 合约在通过后将执行的一系列操作。每个操作都包含一个目标地址、编码函数调用的 calldata 以及要包含的 ETH 数量。此外，提案还包括人类可读的描述。
 
-=== Create a Proposal
+=== 创建提案
 
-Let’s say we want to create a proposal to give a team a grant, in the form of ERC-20 tokens from the governance treasury. This proposal will consist of a single action where the target is the ERC-20 token, calldata is the encoded function call `transfer(<team wallet>, <grant amount>)`, and with 0 ETH attached.
+假设我们想创建一个提案，以 ERC-20 token 的形式从治理资金库向团队提供赠款。此提案将包含一个操作，其中目标是 ERC-20 token，calldata 是编码的函数调用 `transfer(<team wallet>, <grant amount>)`，并附加 0 ETH。
 
-Generally a proposal will be created with the help of an interface such as Tally or https://docs.openzeppelin.com/defender/module/actions#transaction-proposals-reference[Defender Proposals]. Here we will show how to create the proposal using Ethers.js.
+通常，将在 Tally 或 https://docs.openzeppelin.com/defender/module/actions#transaction-proposals-reference[Defender Proposals] 等接口的帮助下创建提案。在这里，我们将展示如何使用 Ethers.js 创建提案。
 
-First we get all the parameters necessary for the proposal action.
+首先，我们获取提案操作所需的所有参数。
 
 ```javascript
 const tokenAddress = ...;
@@ -115,41 +115,41 @@ const grantAmount = ...;
 const transferCalldata = token.interface.encodeFunctionData(‘transfer’, [teamAddress, grantAmount]);
 ```
 
-Now we are ready to call the propose function of the Governor. Note that we don’t pass in one array of actions, but instead three arrays corresponding to the list of targets, the list of values, and the list of calldatas. In this case it’s a single action, so it’s simple:
+现在我们准备好调用 Governor 的 propose 函数。请注意，我们没有传入一个操作数组，而是传入三个数组，分别对应于目标列表、值列表和 calldata 列表。在这种情况下，这是一个单一的操作，因此很简单：
 
 ```javascript
 await governor.propose(
   [tokenAddress],
   [0],
   [transferCalldata],
-  “Proposal #1: Give grant to team”,
+  “Proposal #1: Give grant to team”, // 提案 #1：向团队赠送赠款
 );
 ```
 
-This will create a new proposal, with a proposal id that is obtained by hashing together the proposal data, and which will also be found in an event in the logs of the transaction.
+这将创建一个新提案，其提案 ID 通过将提案数据哈希在一起获得，并且也可以在交易日志中的事件中找到。
 
-=== Cast a Vote
+=== 投票
 
-Once a proposal is active, delegates can cast their vote. Note that it is delegates who carry voting power: if a token holder wants to participate, they can set a trusted representative as their delegate, or they can become a delegate themselves by self-delegating their voting power.
+一旦提案生效，代表就可以投票。请注意，拥有投票权的是代表：如果 token 持有者想要参与，他们可以将受信任的代表设置为他们的代表，或者他们可以通过自我委托他们的投票权来成为代表。
 
-Votes are cast by interacting with the Governor contract through the `castVote` family of functions. Voters would generally invoke this from a governance UI such as Tally.
+通过与 Governor 合约交互，通过 `castVote` 系列函数进行投票。选民通常会从 Tally 等治理 UI 中调用此函数。
 
-image::tally-vote.png[Voting in Tally]
+image::tally-vote.png[在 Tally 中投票]
 
-=== Execute the Proposal
+=== 执行提案
 
-Once the voting period is over, if quorum was reached (enough voting power participated) and the majority voted in favor, the proposal is considered successful and can proceed to be executed. Once a proposal passes, it can be queued and executed from the same place you voted.
+一旦投票期结束，如果达到法定人数（参与的投票权足够）并且大多数人投了赞成票，则该提案被认为是成功的，并且可以继续执行。提案通过后，可以从您投票的同一位置进行排队和执行。
 
-image::tally-exec.png[Administration Panel in Tally]
+image::tally-exec.png[Tally 中的管理面板]
 
-We will see now how to do this manually using Ethers.js.
+我们现在将看到如何使用 Ethers.js 手动执行此操作。
 
-If a timelock was set up, the first step to execution is queueing. You will notice that both the queue and execute functions require passing in the entire proposal parameters, as opposed to just the proposal id. This is necessary because this data is not stored on chain, as a measure to save gas. Note that these parameters can always be found in the events emitted by the contract. The only parameter that is not sent in its entirety is the description, since this is only needed in its hashed form to compute the proposal id.
+如果设置了时间锁，则执行的第一步是排队。您会注意到，queue 和 execute 函数都需要传入整个提案参数，而不是仅传入提案 ID。这是必要的，因为此数据未存储在链上，这是一种节省 gas 的措施。请注意，这些参数始终可以在合约发出的事件中找到。唯一未完整发送的参数是描述，因为仅需要以哈希形式计算提案 ID。
 
-To queue, we call the queue function:
+要排队，我们调用 queue 函数：
 
 ```javascript
-const descriptionHash = ethers.utils.id(“Proposal #1: Give grant to team”);
+const descriptionHash = ethers.utils.id(“Proposal #1: Give grant to team”); // 提案 #1：向团队赠送赠款
 
 await governor.queue(
   [tokenAddress],
@@ -159,9 +159,9 @@ await governor.queue(
 );
 ```
 
-This will cause the Governor to interact with the timelock contract and queue the actions for execution after the required delay.
+这将导致 Governor 与时间锁合约交互，并在所需的延迟后对操作进行排队以供执行。
 
-After enough time has passed (according to the timelock parameters), the proposal can be executed. If there was no timelock to begin with, this step can be ran immediately after the proposal succeeds.
+经过足够的时间（根据时间锁参数）后，可以执行该提案。如果一开始没有时间锁，则此步骤可以在提案成功后立即运行。
 
 ```javascript
 await governor.execute(
@@ -172,21 +172,21 @@ await governor.execute(
 );
 ```
 
-Executing the proposal will transfer the ERC-20 tokens to the chosen recipient. To wrap up: we set up a system where a treasury is controlled by the collective decision of the token holders of a project, and all actions are executed via proposals enforced by on-chain votes.
+执行提案会将 ERC-20 token 转移给选定的接收者。总结：我们设置了一个系统，其中资金库由项目 token 持有者的集体决策控制，并且所有操作均通过链上投票强制执行的提案来执行。
 
-== Timestamp based governance
+== 基于时间戳的治理
 
-=== Motivation
+=== 动机
 
-It is sometimes difficult to deal with durations expressed in number of blocks because of inconsistent or unpredictable time between blocks. This is particularly true of some L2 networks where blocks are produced based on blockchain usage. Using number of blocks can also lead to the governance rules being affected by network upgrades that modify the expected time between blocks.
+由于区块之间的时间不一致或不可预测，因此有时很难处理以区块数表示的持续时间。对于某些 L2 网络而言尤其如此，在这些网络中，区块是根据区块链使用情况生成的。使用区块数也可能导致治理规则受到修改预期区块间隔的网络升级的影响。
 
-The difficulty of replacing block numbers with timestamps is that the Governor and the token must both use the same format when querying past votes. If a token is designed around block numbers, it is not possible for a Governor to reliably do timestamp based lookups.
+用时间戳替换区块编号的困难在于，Governor 和 token 在查询过去的投票时都必须使用相同的格式。如果 token 是围绕区块编号设计的，则 Governor 无法可靠地进行基于时间戳的查找。
 
-Therefore, designing a timestamp based voting system starts with the token.
+因此，设计基于时间戳的投票系统始于 token。
 
 === Token
 
-Since v4.9, all voting contracts (including xref:api:token/ERC20.adoc#ERC20Votes[`ERC20Votes`] and xref:api:token/ERC721.adoc#ERC721Votes[`ERC721Votes`]) rely on xref:api:interfaces.adoc#IERC6372[IERC6372] for clock management. In order to change from operating with block numbers to operating with timestamps, all that is required is to override the `clock()` and `CLOCK_MODE()` functions.
+自 v4.9 以来，所有投票合约（包括 xref:api:token/ERC20.adoc#ERC20Votes[`ERC20Votes`] 和 xref:api:token/ERC721.adoc#ERC721Votes[`ERC721Votes`]）都依赖于 xref:api:interfaces.adoc#IERC6372[IERC6372] 进行时钟管理。为了从使用区块编号切换到使用时间戳，只需要覆盖 `clock()` 和 `CLOCK_MODE()` 函数即可。
 
 ```solidity
 include::api:example$governance/MyTokenTimestampBased.sol[]
@@ -194,7 +194,7 @@ include::api:example$governance/MyTokenTimestampBased.sol[]
 
 === Governor
 
-The Governor will automatically detect the clock mode used by the token and adapt to it. There is no need to override anything in the Governor contract. However, the clock mode does affect how some values are interpreted. It is therefore necessary to set the `votingDelay()` and `votingPeriod()` accordingly.
+Governor 将自动检测 token 使用的时钟模式并适应它。无需在 Governor 合约中覆盖任何内容。但是，时钟模式确实会影响某些值的解释方式。因此，有必要相应地设置 `votingDelay()` 和 `votingPeriod()`。
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -232,8 +232,8 @@ contract MyGovernor is Governor, GovernorCountingSimple, GovernorVotes, Governor
 }
 ```
 
-=== Disclaimer
+=== 免责声明
 
-Timestamp based voting is a recent feature that was formalized in ERC-6372 and ERC-5805, and introduced in v4.9. At the time this feature is released, some governance tooling may not support it yet. Users can expect invalid reporting of deadlines & durations if the tool is not able to interpret the ERC6372 clock. This invalid reporting by offchain tools does not affect the onchain security and functionality of the governance contract.
+基于时间戳的投票是一项最新功能，已在 ERC-6372 和 ERC-5805 中正式确定，并在 v4.9 中引入。在发布此功能时，某些治理工具可能尚未支持它。如果该工具无法解释 ERC6372 时钟，则用户可能会遇到无效的截止日期和持续时间报告。离线工具的这种无效报告不会影响治理合约的链上安全性和功能。
 
-Governors with timestamp support (v4.9 and above) are compatible with old tokens (before v4.9) and will operate in "block number" mode (which is the mode all old tokens operate on). On the other hand, old Governor instances (before v4.9) are not compatible with new tokens operating using timestamps. If you update your token code to use timestamps, make sure to also update your Governor code.
+具有时间戳支持的 Governor（v4.9 及以上）与旧 token（v4.9 之前）兼容，并将以“区块编号”模式运行（这是所有旧 token 运行的模式）。另一方面，旧 Governor 实例（v4.9 之前）与使用时间戳运行的新 token 不兼容。如果更新 token 代码以使用时间戳，请确保也更新 Governor 代码。

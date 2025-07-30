@@ -1,15 +1,12 @@
 = Contracts Wizard
 :page-notoc:
 
-Not sure where to start? Use the interactive generator below to bootstrap your
-contract and learn about the components offered in OpenZeppelin Contracts.
+不知道从哪里开始？ 使用下面的交互式生成器来引导你的合约，并了解 OpenZeppelin Contracts 中提供的组件。
 
-TIP: Place the resulting contract in your `contracts` or `src` directory in order to compile it with a tool like Hardhat or Foundry. Consider reading our guide on xref:learn::developing-smart-contracts.adoc[Developing Smart Contracts] for more guidance!
+TIP: 将生成的合约放在你的 `contracts` 或 `src` 目录中，以便使用像 Hardhat 或 Foundry 这样的工具进行编译。 考虑阅读我们的 xref:learn::developing-smart-contracts.adoc[开发智能合约] 指南以获得更多指导！
 
 ++++
 <script async src="https://wizard.openzeppelin.com/build/embed.js"></script>
 
 <oz-wizard style="display: block; min-height: 40rem;"></oz-wizard>
 ++++
-
-

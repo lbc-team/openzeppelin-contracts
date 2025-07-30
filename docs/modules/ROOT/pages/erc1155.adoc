@@ -1,54 +1,54 @@
 = ERC-1155
 
-ERC-1155 is a novel token standard that aims to take the best from previous standards to create a xref:tokens.adoc#different-kinds-of-tokens[*fungibility-agnostic*] and *gas-efficient* xref:tokens.adoc#but_first_coffee_a_primer_on_token_contracts[token contract].
+ERC-1155 是一种新颖的 token 标准，旨在从先前的标准中汲取精华，创建一个 link:tokens.adoc#different-kinds-of-tokens[*同质性无关*] 且 *gas 高效* 的 link:tokens.adoc#but_first_coffee_a_primer_on_token_contracts[token 合约]。
 
-TIP: ERC-1155 draws ideas from all of xref:erc20.adoc[ERC-20], xref:erc721.adoc[ERC-721], and https://eips.ethereum.org/EIPS/eip-777[ERC-777]. If you're unfamiliar with those standards, head to their guides before moving on.
+TIP: ERC-1155 从 link:erc20.adoc[ERC-20]、link:erc721.adoc[ERC-721] 和 https://eips.ethereum.org/EIPS/eip-777[ERC-777] 中汲取了灵感。如果你不熟悉这些标准，请先阅读它们的指南再继续。
 
 [[multi-token-standard]]
-== Multi Token Standard
+== 多 Token 标准
 
-The distinctive feature of ERC-1155 is that it uses a single smart contract to represent multiple tokens at once. This is why its xref:api:token/ERC1155.adoc#IERC1155-balanceOf-address-uint256-[`balanceOf`] function differs from ERC-20's and ERC-777's: it has an additional `id` argument for the identifier of the token that you want to query the balance of.
+ERC-1155 的独特之处在于它使用单个智能合约一次性表示多个 token。这就是为什么它的 link:api:token/ERC1155.adoc#IERC1155-balanceOf-address-uint256-[`balanceOf`] 函数与 ERC-20 和 ERC-777 的不同：它有一个额外的 `id` 参数，用于你要查询余额的 token 的标识符。
 
-This is similar to how ERC-721 does things, but in that standard a token `id` has no concept of balance: each token is non-fungible and exists or doesn't. The ERC-721 xref:api:token/ERC721.adoc#IERC721-balanceOf-address-[`balanceOf`] function refers to _how many different tokens_ an account has, not how many of each. On the other hand, in ERC-1155 accounts have a distinct balance for each token `id`, and non-fungible tokens are implemented by simply minting a single one of them.
+这与 ERC-721 的工作方式类似，但在该标准中，token `id` 没有余额的概念：每个 token 都是非同质化的，要么存在，要么不存在。ERC-721 的 link:api:token/ERC721.adoc#IERC721-balanceOf-address-[`balanceOf`] 函数指的是一个账户拥有 *多少不同的 token*，而不是每个 token 有多少。另一方面，在 ERC-1155 中，账户对每个 token `id` 都有不同的余额，而非同质化 token 的实现方式仅仅是铸造一个。
 
-This approach leads to massive gas savings for projects that require multiple tokens. Instead of deploying a new contract for each token type, a single ERC-1155 token contract can hold the entire system state, reducing deployment costs and complexity.
+这种方法为需要多个 token 的项目节省了大量的 Gas。单个 ERC-1155 token 合约可以保存整个系统状态，从而降低部署成本和复杂性，而无需为每种 token 类型部署新的合约。
 
 [[batch-operations]]
-== Batch Operations
+== 批量操作
 
-Because all state is held in a single contract, it is possible to operate over multiple tokens in a single transaction very efficiently. The standard provides two functions, xref:api:token/ERC1155.adoc#IERC1155-balanceOfBatch-address---uint256---[`balanceOfBatch`] and xref:api:token/ERC1155.adoc#IERC1155-safeBatchTransferFrom-address-address-uint256---uint256---bytes-[`safeBatchTransferFrom`], that make querying multiple balances and transferring multiple tokens simpler and less gas-intensive.
+因为所有状态都保存在一个合约中，所以可以在单个交易中非常高效地对多个 token 进行操作。该标准提供了两个函数，link:api:token/ERC1155.adoc#IERC1155-balanceOfBatch-address---uint256---[`balanceOfBatch`] 和 link:api:token/ERC1155.adoc#IERC1155-safeBatchTransferFrom-address-address-uint256---uint256---bytes-[`safeBatchTransferFrom`]，它们使查询多个余额和转移多个 token 变得更简单且 Gas 消耗更少。
 
-In the spirit of the standard, we've also included batch operations in the non-standard functions, such as xref:api:token/ERC1155.adoc#ERC1155-_mintBatch-address-uint256---uint256---bytes-[`_mintBatch`].
+本着该标准的精神，我们还在非标准函数中包含了批量操作，例如 link:api:token/ERC1155.adoc#ERC1155-_mintBatch-address-uint256---uint256---bytes-[`_mintBatch`]。
 
-== Constructing an ERC-1155 Token Contract
+== 构建一个 ERC-1155 Token 合约
 
-We'll use ERC-1155 to track multiple items in our game, which will each have their own unique attributes. We mint all items to the deployer of the contract, which we can later transfer to players. Players are free to keep their tokens or trade them with other people as they see fit, as they would any other asset on the blockchain!
+我们将使用 ERC-1155 来跟踪我们游戏中的多个物品，每个物品都有其独特的属性。我们将所有物品都铸造给合约的部署者，稍后我们可以将其转移给玩家。玩家可以自由地保留他们的 token 或与其他玩家进行交易，就像他们在区块链上的任何其他资产一样！
 
-For simplicity, we will mint all items in the constructor, but you could add minting functionality to the contract to mint on demand to players.
+为了简单起见，我们将在构造函数中铸造所有物品，但你可以向合约添加铸造功能，以便按需铸造给玩家。
 
-TIP: For an overview of minting mechanisms, check out xref:erc20-supply.adoc[Creating ERC-20 Supply].
+TIP: 有关铸造机制的概述，请查看 link:erc20-supply.adoc[创建 ERC-20 供应]。
 
-Here's what a contract for tokenized items might look like:
+以下是一个 token 化物品的合约示例：
 
 [source,solidity]
 ----
 include::api:example$token/ERC1155/GameItems.sol[]
 ----
 
-Note that for our Game Items, Gold is a fungible token whilst Thor's Hammer is a non-fungible token as we minted only one.
+请注意，对于我们的游戏物品，Gold 是一种同质化 token，而 Thor's Hammer 是一种非同质化 token，因为我们只铸造了一个。
 
-The xref:api:token/ERC1155.adoc#ERC1155[`ERC1155`] contract includes the optional extension xref:api:token/ERC1155.adoc#IERC1155MetadataURI[`IERC1155MetadataURI`]. That's where the xref:api:token/ERC1155.adoc#IERC1155MetadataURI-uri-uint256-[`uri`] function comes from: we use it to retrieve the metadata uri.
+link:api:token/ERC1155.adoc#ERC1155[`ERC1155`] 合约包括可选的扩展 link:api:token/ERC1155.adoc#IERC1155MetadataURI[`IERC1155MetadataURI`]。这就是 link:api:token/ERC1155.adoc#IERC1155MetadataURI-uri-uint256-[`uri`] 函数的来源：我们使用它来检索元数据 URI。
 
-Also note that, unlike ERC-20, ERC-1155 lacks a `decimals` field, since each token is distinct and cannot be partitioned.
+另请注意，与 ERC-20 不同，ERC-1155 缺少 `decimals` 字段，因为每个 token 都是不同的，并且无法分割。
 
-Once deployed, we will be able to query the deployer’s balance:
+部署后，我们将能够查询部署者的余额：
 [source,javascript]
 ----
 > gameItems.balanceOf(deployerAddress,3)
 1000000000
 ----
 
-We can transfer items to player accounts:
+我们可以将物品转移到玩家账户：
 [source,javascript]
 ----
 > gameItems.safeTransferFrom(deployerAddress, playerAddress, 2, 1, "0x0")
@@ -58,7 +58,7 @@ We can transfer items to player accounts:
 0
 ----
 
-We can also batch transfer items to player accounts and get the balance of batches:
+我们还可以批量将物品转移到玩家账户并获取批量的余额：
 [source,javascript]
 ----
 > gameItems.safeBatchTransferFrom(deployerAddress, playerAddress, [0,1,3,4], [50,100,1,1], "0x0")
@@ -66,7 +66,7 @@ We can also batch transfer items to player accounts and get the balance of batch
 [50,100,1,1,1]
 ----
 
-The metadata uri can be obtained:
+可以获取元数据 URI：
 
 [source,javascript]
 ----
@@ -74,11 +74,11 @@ The metadata uri can be obtained:
 "https://game.example/api/item/{id}.json"
 ----
 
-The `uri` can include the string `++{id}++` which clients must replace with the actual token ID, in lowercase hexadecimal (with no 0x prefix) and leading zero padded to 64 hex characters.
+`uri` 可以包含字符串 `++{id}++`，客户端必须将其替换为实际的 token ID，以小写十六进制（不带 0x 前缀）和前导零填充到 64 个十六进制字符。
 
-For token ID `2` and uri `++https://game.example/api/item/{id}.json++` clients would replace `++{id}++` with `0000000000000000000000000000000000000000000000000000000000000002` to retrieve JSON at `https://game.example/api/item/0000000000000000000000000000000000000000000000000000000000000002.json`.
+对于 token ID `2` 和 URI `++https://game.example/api/item/{id}.json++`，客户端会将 `++{id}++` 替换为 `0000000000000000000000000000000000000000000000000000000000000002` 以检索 `https://game.example/api/item/0000000000000000000000000000000000000000000000000000000000000002.json` 处的 JSON。
 
-The JSON document for token ID 2 might look something like:
+token ID 2 的 JSON 文档可能如下所示：
 
 [source,json]
 ----
@@ -90,29 +90,29 @@ The JSON document for token ID 2 might look something like:
 }
 ----
 
-For more information about the metadata JSON Schema, check out the https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md#erc-1155-metadata-uri-json-schema[ERC-1155 Metadata URI JSON Schema].
+有关元数据 JSON Schema 的更多信息，请查看 https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md#erc-1155-metadata-uri-json-schema[ERC-1155 元数据 URI JSON Schema]。
 
-NOTE: You'll notice that the item's information is included in the metadata, but that information isn't on-chain! So a game developer could change the underlying metadata, changing the rules of the game!
+NOTE: 你会注意到物品的信息包含在元数据中，但该信息不在链上！因此，游戏开发者可以更改底层元数据，从而更改游戏规则！
 
-TIP: If you'd like to put all item information on-chain, you can extend ERC-721 to do so (though it will be rather costly) by providing a xref:utilities.adoc#base64[`Base64`] Data URI with the JSON schema encoded. You could also leverage IPFS to store the URI information, but these techniques are out of the scope of this overview guide
+TIP: 如果你想将所有物品信息都放在链上，你可以扩展 ERC-721 来做到这一点（虽然成本会相当高），方法是提供一个带有编码的 JSON schema 的 link:utilities.adoc#base64[`Base64`] Data URI。你也可以利用 IPFS 来存储 URI 信息，但这些技术超出了本概述指南的范围
 
 [[sending-to-contracts]]
-== Sending Tokens to Contracts
+== 将 Token 发送到合约
 
-A key difference when using xref:api:token/ERC1155.adoc#IERC1155-safeTransferFrom-address-address-uint256-uint256-bytes-[`safeTransferFrom`] is that token transfers to other contracts may revert with the following custom error:
+使用 link:api:token/ERC1155.adoc#IERC1155-safeTransferFrom-address-address-uint256-uint256-bytes-[`safeTransferFrom`] 时的一个主要区别是，将 token 转移到其他合约可能会因以下自定义错误而回退：
 
 [source,text]
 ----
 ERC1155InvalidReceiver("<ADDRESS>")
 ----
 
-This is a good thing! It means that the recipient contract has not registered itself as aware of the ERC-1155 protocol, so transfers to it are disabled to *prevent tokens from being locked forever*. As an example, https://etherscan.io/token/0xa74476443119A942dE498590Fe1f2454d7D4aC0d?a=0xa74476443119A942dE498590Fe1f2454d7D4aC0d[the Golem contract currently holds over 350k `GNT` tokens], and lacks methods to get them out of there. This has happened to virtually every ERC20-backed project, usually due to user error.
+这是一件好事！这表示接收合约尚未将自身注册为知道 ERC-1155 协议，因此禁用了向其转移 token，以 *防止 token 永远被锁定*。例如，https://etherscan.io/token/0xa74476443119A942dE498590Fe1f2454d7D4aC0d?a=0xa74476443119A942dE498590Fe1f2454d7D4aC0d[Golem 合约目前持有超过 35 万个 `GNT` token]，并且缺少将其从那里取出的方法。这种情况几乎发生在每个 ERC20 支持的项目中，通常是由于用户错误造成的。
 
-In order for our contract to receive ERC-1155 tokens we can inherit from the convenience contract xref:api:token/ERC1155.adoc#ERC1155Holder[`ERC1155Holder`] which handles the registering for us. However, we need to remember to implement functionality to allow tokens to be transferred out of our contract:
+为了使我们的合约能够接收 ERC-1155 token，我们可以继承便捷合约 link:api:token/ERC1155.adoc#ERC1155Holder[`ERC1155Holder`]，它会为我们处理注册。但是，我们需要记住实现允许 token 从我们的合约中转移出去的功能：
 
 [source,solidity]
 ----
 include::api:example$token/ERC1155/MyERC115HolderContract.sol[]
 ----
 
-We can also implement more complex scenarios using the xref:api:token/ERC1155.adoc#IERC1155Receiver-onERC1155Received-address-address-uint256-uint256-bytes-[`onERC1155Received`] and xref:api:token/ERC1155.adoc#IERC1155Receiver-onERC1155BatchReceived-address-address-uint256---uint256---bytes-[`onERC1155BatchReceived`] functions.
+我们还可以使用 link:api:token/ERC1155.adoc#IERC1155Receiver-onERC1155Received-address-address-uint256-uint256-bytes-[`onERC1155Received`] 和 link:api:token/ERC1155.adoc#IERC1155Receiver-onERC1155BatchReceived-address-address-uint256---uint256---bytes-[`onERC1155BatchReceived`] 函数实现更复杂的场景。

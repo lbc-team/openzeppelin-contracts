@@ -1,159 +1,159 @@
 = ERC-4626
 :stem: latexmath
 
-https://eips.ethereum.org/EIPS/eip-4626[ERC-4626] is an extension of xref:erc20.adoc[ERC-20] that proposes a standard interface for token vaults. This standard interface can be used by widely different contracts (including lending markets, aggregators, and intrinsically interest bearing tokens), which brings a number of subtleties. Navigating these potential issues is essential to implementing a compliant and composable token vault.
+https://eips.ethereum.org/EIPS/eip-4626[ERC-4626] 是 xref:erc20.adoc[ERC-20] 的一个扩展，它提出了 token vault 的一个标准接口。这个标准接口可以被各种不同的合约使用（包括借贷市场、聚合器和内生型计息 token），这带来了一些微妙之处。为了实现兼容且可组合的 token vault，理解这些潜在的问题至关重要。
 
-We provide a base implementation of ERC-4626 that includes a simple vault. This contract is designed in a way that allows developers to easily re-configure the vault's behavior, with minimal overrides, while staying compliant. In this guide, we will discuss some security considerations that affect ERC-4626. We will also discuss common customizations of the vault.
+我们提供了一个 ERC-4626 的基础实现，其中包含一个简单的 vault。这个合约的设计方式允许开发者轻松地重新配置 vault 的行为，只需最少的重写，同时保持兼容性。在本指南中，我们将讨论一些影响 ERC-4626 的安全考虑因素。我们还将讨论 vault 的常见自定义。
 
 [[inflation-attack]]
-== Security concern: Inflation attack
+== 安全问题：通货膨胀攻击
 
-=== Visualizing the vault
+=== 可视化 vault
 
-In exchange for the assets deposited into an ERC-4626 vault, a user receives shares. These shares can later be burned to redeem the corresponding underlying assets. The number of shares a user gets depends on the amount of assets they put in and on the exchange rate of the vault. This exchange rate is defined by the current liquidity held by the vault.
+为了换取存入 ERC-4626 vault 的资产，用户会收到份额（shares）。这些份额可以在之后被销毁以赎回相应的底层资产。用户获得的份额数量取决于他们投入的资产数量以及 vault 的汇率。这个汇率由 vault 当前持有的流动性来定义。
 
-- If a vault has 100 tokens to back 200 shares, then each share is worth 0.5 assets.
-- If a vault has 200 tokens to back 100 shares, then each share is worth 2.0 assets.
+- 如果一个 vault 有 100 个 token 来支持 200 份份额，那么每份份额价值 0.5 个资产。
+- 如果一个 vault 有 200 个 token 来支持 100 份份额，那么每份份额价值 2.0 个资产。
 
-In other words, the exchange rate can be defined as the slope of the line that passes through the origin and the current number of assets and shares in the vault. Deposits and withdrawals move the vault in this line.
+换句话说，汇率可以定义为穿过原点以及 vault 中当前资产和份额数量的直线的斜率。存款和取款操作会使 vault 在这条线上移动。
 
-image::erc4626-rate-linear.png[Exchange rates in linear scale]
+image::erc4626-rate-linear.png[线性比例下的汇率]
 
-When plotted in log-log scale, the rate is defined similarly, but appears differently (because the point (0,0) is infinitely far away). Rates are represented by "diagonal" lines with different offsets.
+当以对数比例绘制时，汇率的定义类似，但显示效果不同（因为点 (0,0) 在无穷远处）。汇率用具有不同偏移的“对角线”表示。
 
-image::erc4626-rate-loglog.png[Exchange rates in logarithmic scale]
+image::erc4626-rate-loglog.png[对数比例下的汇率]
 
-In such a representation, widely different rates can be clearly visible in the same graph. This wouldn't be the case in linear scale.
+在这样的表示中，差异很大的汇率可以在同一张图中清晰可见。在线性比例中则不会出现这种情况。
 
-image::erc4626-rate-loglogext.png[More exchange rates in logarithmic scale]
+image::erc4626-rate-loglogext.png[更多对数比例下的汇率]
 
-=== The attack
+=== 攻击
 
-When depositing tokens, the number of shares a user gets is rounded towards zero. This rounding takes away value from the user in favor of the vault (i.e. in favor of all the current shareholders). This rounding is often negligible because of the amount at stake. If you deposit 1e9 shares worth of tokens, the rounding will have you lose at most 0.0000001% of your deposit. However if you deposit 10 shares worth of tokens, you could lose 10% of your deposit. Even worse, if you deposit <1 share worth of tokens, then you get 0 shares, and you basically made a donation.
+当存入 token 时，用户获得的份额数量会向下取整。这种取整会从用户那里夺走价值，从而有利于 vault（即有利于所有当前的股东）。由于风险的数量，这种取整通常可以忽略不计。 如果你存入价值 1e9 份额的 token，那么取整最多会让你损失 0.0000001% 的存款。但是，如果你存入价值 10 份额的 token，你可能会损失 10% 的存款。更糟糕的是，如果你存入价值 <1 份额的 token，那么你会得到 0 份额，并且你基本上进行了捐赠。
 
-For a given amount of assets, the more shares you receive the safer you are. If you want to limit your losses to at most 1%, you need to receive at least 100 shares.
+对于给定数量的资产，你收到的份额越多就越安全。如果你想将损失限制在最多 1%，则需要至少收到 100 份份额。
 
-image::erc4626-deposit.png[Depositing assets]
+image::erc4626-deposit.png[存入资产]
 
-In the figure we can see that for a given deposit of 500 assets, the number of shares we get and the corresponding rounding losses depend on the exchange rate. If the exchange rate is that of the orange curve, we are getting less than a share, so we lose 100% of our deposit. However, if the exchange rate is that of the green curve, we get 5000 shares, which limits our rounding losses to at most 0.02%.
+在图中我们可以看到，对于给定的 500 资产的存款，我们获得的份额数量和相应的取整损失取决于汇率。如果汇率是橙色曲线的汇率，我们会获得小于一份份额，因此我们会损失 100% 的存款。但是，如果汇率是绿色曲线的汇率，我们会获得 5000 份份额，这样我们的取整损失最多限制在 0.02%。
 
-image::erc4626-mint.png[Minting shares]
+image::erc4626-mint.png[铸造份额]
 
-Symmetrically, if we focus on limiting our losses to a maximum of 0.5%, we need to get at least 200 shares. With the green exchange rate that requires just 20 tokens, but with the orange rate that requires 200000 tokens.
+对称地，如果我们专注于将损失限制在最多 0.5%，我们需要至少获得 200 份份额。使用绿色汇率只需要 20 个 token，但是使用橙色汇率需要 200000 个 token。
 
-We can clearly see that the blue and green curves correspond to vaults that are safer than the yellow and orange curves.
+我们可以清楚地看到蓝色和绿色曲线对应于比黄色和橙色曲线更安全的 vault。
 
-The idea of an inflation attack is that an attacker can donate assets to the vault to move the rate curve to the right, and make the vault unsafe.
+通货膨胀攻击的想法是，攻击者可以向 vault 捐赠资产以将汇率曲线向右移动，并使 vault 不安全。
 
-image::erc4626-attack.png[Inflation attack without protection]
+image::erc4626-attack.png[没有保护的通货膨胀攻击]
 
-Figure 6 shows how an attacker can manipulate the rate of an empty vault. First the attacker must deposit a small amount of tokens (1 token) and follow up with a donation of 1e5 tokens directly to the vault to move the exchange rate "right". This puts the vault in a state where any deposit smaller than 1e5 would be completely lost to the vault. Given that the attacker is the only shareholder (from their donation), the attacker would steal all the tokens deposited.
+图 6 说明了攻击者如何操纵一个空 vault 的汇率。首先，攻击者必须存入少量 token（1 个token），然后直接向该 vault 捐赠 1e5 个 token，以使汇率“向右”移动。 这将使 vault 处于一种状态，即任何小于 1e5 的存款都会完全损失给 vault。 鉴于攻击者是唯一的股东（通过他们的捐赠），攻击者将窃取所有存入的 token。
 
-An attacker would typically wait for a user to do the first deposit into the vault, and would frontrun that operation with the attack described above. The risk is low, and the size of the "donation" required to manipulate the vault is equivalent to the size of the deposit that is being attacked.
+攻击者通常会等待用户进行首次存款到 vault 中，并抢先执行上述攻击。 风险很低，并且操纵 vault 所需的“捐赠”金额等于被攻击存款的金额。
 
-In math that gives:
+用数学公式表示为：
 
-- stem:[a_0] the attacker deposit
-- stem:[a_1] the attacker donation
-- stem:[u] the user deposit
+- stem:[a_0] 攻击者存款
+- stem:[a_1] 攻击者捐赠
+- stem:[u] 用户存款
 
 [%header,cols=4*]
 |===
 |
-| Assets
-| Shares
-| Rate
+| 资产
+| 份额
+| 汇率
 
-| initial
+| 初始
 | stem:[0]
 | stem:[0]
 | -
 
-| after attacker's deposit
+| 攻击者存款后
 | stem:[a_0]
 | stem:[a_0]
 | stem:[1]
 
-| after attacker's donation
+| 攻击者捐赠后
 | stem:[a_0+a_1]
 | stem:[a_0]
 | stem:[\frac{a_0}{a_0+a_1}]
 |===
 
-This means a deposit of stem:[u] will give stem:[\frac{u \times a_0}{a_0 + a_1}] shares.
+这意味着 stem:[u] 的存款将给出 stem:[\frac{u \times a_0}{a_0 + a_1}] 份额。
 
-For the attacker to dilute that deposit to 0 shares, causing the user to lose all its deposit, it must ensure that
+为了让攻击者将该存款稀释到 0 份额，导致用户损失所有存款，它必须确保
 
 [stem]
 ++++
 \frac{u \times a_0}{a_0+a_1} < 1 \iff u < 1 + \frac{a_1}{a_0}
 ++++
 
-Using stem:[a_0 = 1] and stem:[a_1 = u] is enough. So the attacker only needs stem:[u+1] assets to perform a successful attack.
+使用 stem:[a_0 = 1] 和 stem:[a_1 = u] 就足够了。 因此，攻击者只需要 stem:[u+1] 资产就可以成功发动攻击。
 
-It is easy to generalize the above results to scenarios where the attacker is going after a smaller fraction of the user's deposit. In order to target stem:[\frac{u}{n}], the user needs to suffer rounding of a similar fraction, which means the user must receive at most stem:[n] shares. This results in:
+很容易将上述结果推广到攻击者试图获得用户存款的较小部分的情况。 为了瞄准 stem:[\frac{u}{n}]，用户需要遭受类似比例的舍入，这意味着用户最多必须收到 stem:[n] 份额。 这导致：
 
 [stem]
 ++++
 \frac{u \times a_0}{a_0+a_1} < n \iff \frac{u}{n} < 1 + \frac{a_1}{a_0}
 ++++
 
-In this scenario, the attack is stem:[n] times less powerful (in how much it is stealing) and costs stem:[n] times less to execute. In both cases, the amount of funds the attacker needs to commit is equivalent to its potential earnings.
+在这种情况下，攻击的威力（在窃取金额方面）要小 stem:[n] 倍，并且执行成本要低 stem:[n] 倍。 在这两种情况下，攻击者需要投入的资金量都相当于其潜在收益。
 
-=== Defending with a virtual offset
+=== 使用虚拟偏移进行防御
 
-The defense we propose is based on the approach used in link:https://github.com/boringcrypto/YieldBox[YieldBox]. It consists of two parts:
+我们提出的防御基于 link:https://github.com/boringcrypto/YieldBox[YieldBox] 中使用的方法。 它由两部分组成：
 
-- Use an offset between the "precision" of the representation of shares and assets. Said otherwise, we use more decimal places to represent the shares than the underlying token does to represent the assets.
-- Include virtual shares and virtual assets in the exchange rate computation. These virtual assets enforce the conversion rate when the vault is empty.
+- 使用份额和资产表示的“精度”之间的偏移量。 也就是说，我们使用比底层 token 表示资产更多的小数位来表示份额。
+- 在汇率计算中包含虚拟份额和虚拟资产。 这些虚拟资产在 vault 为空时强制执行转换率。
 
-These two parts work together in enforcing the security of the vault. First, the increased precision corresponds to a high rate, which we saw is safer as it reduces the rounding error when computing the amount of shares. Second, the virtual assets and shares (in addition to simplifying a lot of the computations) capture part of the donation, making it unprofitable for a developer to perform an attack.
+这两个部分一起工作以确保 vault 的安全性。 首先，增加的精度对应于较高的汇率，我们已经看到这更安全，因为它减少了计算份额数量时的舍入误差。 其次，虚拟资产和份额（除了简化大量计算之外）捕获了部分捐赠，使得开发者进行攻击无利可图。
 
-Following the previous math definitions, we have:
+按照之前的数学定义，我们有：
 
-- stem:[\delta] the vault offset
-- stem:[a_0] the attacker deposit
-- stem:[a_1] the attacker donation
-- stem:[u] the user deposit
+- stem:[\delta] vault 偏移量
+- stem:[a_0] 攻击者存款
+- stem:[a_1] 攻击者捐赠
+- stem:[u] 用户存款
 
 [%header,cols=4*]
 |===
 |
-| Assets
-| Shares
-| Rate
+| 资产
+| 份额
+| 汇率
 
-| initial
+| 初始
 | stem:[1]
 | stem:[10^\delta]
 | stem:[10^\delta]
 
-| after attacker's deposit
+| 攻击者存款后
 | stem:[1+a_0]
 | stem:[10^\delta \times (1+a_0)]
 | stem:[10^\delta]
 
-| after attacker's donation
+| 攻击者捐赠后
 | stem:[1+a_0+a_1]
 | stem:[10^\delta \times (1+a_0)]
 | stem:[10^\delta \times \frac{1+a_0}{1+a_0+a_1}]
 |===
 
-One important thing to note is that the attacker only owns a fraction stem:[\frac{a_0}{1 + a_0}] of the shares, so when doing the donation, he will only be able to recover that fraction stem:[\frac{a_1 \times a_0}{1 + a_0}] of the donation. The remaining stem:[\frac{a_1}{1+a_0}] are captured by the vault.
+需要注意的一个重要的事情是，攻击者只拥有份额的 stem:[\frac{a_0}{1 + a_0}] 部分，因此在进行捐赠时，他只能收回捐赠额 stem:[\frac{a_1 \times a_0}{1 + a_0}] 的一部分。 剩余的 stem:[\frac{a_1}{1+a_0}] 由 vault 捕获。
 
 [stem]
 ++++
 \mathit{loss} = \frac{a_1}{1+a_0}
 ++++
 
-When the user deposits stem:[u], he receives
+当用户存入 stem:[u] 时，他收到
 
 [stem]
 ++++
 10^\delta \times u \times \frac{1+a_0}{1+a_0+a_1}
 ++++
 
-For the attacker to dilute that deposit to 0 shares, causing the user to lose all its deposit, it must ensure that
+为了让攻击者将该存款稀释到 0 份额，导致用户损失所有存款，它必须确保
 
 [stem]
 ++++
@@ -175,39 +175,39 @@ For the attacker to dilute that deposit to 0 shares, causing the user to lose al
 \iff 10^\delta \times u \le \mathit{loss}
 ++++
 
-- If the offset is 0, the attacker loss is at least equal to the user's deposit.
-- If the offset is greater than 0, the attacker will have to suffer losses that are orders of magnitude bigger than the amount of value that can hypothetically be stolen from the user.
+- 如果偏移量为 0，则攻击者的损失至少等于用户的存款。
+- 如果偏移量大于 0，则攻击者将不得不遭受比理论上可以从用户那里窃取的价值大几个数量级的损失。
 
-This shows that even with an offset of 0, the virtual shares and assets make this attack non profitable for the attacker. Bigger offsets increase the security even further by making any attack on the user extremely wasteful.
+这表明，即使偏移量为 0，虚拟份额和资产也使这种攻击对攻击者来说无利可图。 更大的偏移量通过使用户遭受的任何攻击都非常浪费来进一步提高安全性。
 
-The following figure shows how the offset impacts the initial rate and limits the ability of an attacker with limited funds to inflate it effectively.
+下图显示了偏移量如何影响初始汇率，并限制了资金有限的攻击者有效膨胀汇率的能力。
 
-image::erc4626-attack-3a.png[Inflation attack without offset=3]
+image::erc4626-attack-3a.png[没有偏移量=3 的通货膨胀攻击]
 stem:[\delta = 3], stem:[a_0 = 1], stem:[a_1 = 10^5]
 
-image::erc4626-attack-3b.png[Inflation attack without offset=3 and an attacker deposit that limits its losses]
+image::erc4626-attack-3b.png[没有偏移量=3 且攻击者存款限制其损失的通货膨胀攻击]
 stem:[\delta = 3], stem:[a_0 = 100], stem:[a_1 = 10^5]
 
-image::erc4626-attack-6.png[Inflation attack without offset=6]
+image::erc4626-attack-6.png[没有偏移量=6 的通货膨胀攻击]
 stem:[\delta = 6], stem:[a_0 = 1], stem:[a_1 = 10^5]
 
 
 [[fees]]
-== Custom behavior: Adding fees to the vault
+== 自定义行为：向 vault 添加费用
 
-In an ERC-4626 vaults, fees can be captured during the deposit/mint and/or during the withdraw/redeem steps. In both cases it is essential to remain compliant with the ERC-4626 requirements with regard to the preview functions.
+在 ERC-4626 vault 中，可以在存款/铸造和/或取款/赎回步骤中收取费用。 在这两种情况下，都必须遵守有关预览函数的 ERC-4626 要求。
 
-For example, if calling `deposit(100, receiver)`, the caller should deposit exactly 100 underlying tokens, including fees, and the receiver should receive a number of shares that matches the value returned by `previewDeposit(100)`. Similarly, `previewMint` should account for the fees that the user will have to pay on top of share's cost.
+例如，如果调用 `deposit(100, receiver)`，调用者应存入正好 100 个底层 token，包括费用，并且接收者应收到与 `previewDeposit(100)` 返回的值匹配的份额数量。 同样，`previewMint` 应该考虑用户必须在份额成本之上支付的费用。
 
-As for the `Deposit` event, while this is less clear in the EIP spec itself, there seems to be consensus that it should include the number of assets paid for by the user, including the fees.
+至于 `Deposit` 事件，虽然这在 EIP 规范本身中不太明确，但似乎已达成共识，它应该包括用户支付的资产数量，包括费用。
 
-On the other hand, when withdrawing assets, the number given by the user should correspond to what he receives. Any fees should be added to the quote (in shares) performed by `previewWithdraw`.
+另一方面，当提取资产时，用户给出的数字应与他收到的数量相对应。 任何费用都应添加到 `previewWithdraw` 执行的报价（以份额表示）中。
 
-The `Withdraw` event should include the number of shares the user burns (including fees) and the number of assets the user actually receives (after fees are deducted).
+`Withdraw` 事件应包括用户燃烧的份额数量（包括费用）和用户实际收到的资产数量（扣除费用后）。
 
-The consequence of this design is that both the `Deposit` and `Withdraw` events will describe two exchange rates. The spread between the "Buy-in" and the "Exit" prices correspond to the fees taken by the vault.
+这种设计的结果是 `Deposit` 和 `Withdraw` 事件都将描述两种汇率。 “买入”价格和“退出”价格之间的差额对应于 vault 收取的费用。
 
-The following example describes how fees proportional to the deposited/withdrawn amount can be implemented:
+以下示例描述了如何实现与存款/取款金额成比例的费用：
 
 ```solidity
 include::api:example$ERC4626Fees.sol[]

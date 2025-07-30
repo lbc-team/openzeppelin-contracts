@@ -1,51 +1,50 @@
-= Extending Contracts
+= 扩展合约
 
-Most of the OpenZeppelin Contracts are expected to be used via https://solidity.readthedocs.io/en/latest/contracts.html#inheritance[inheritance]: you will _inherit_ from them when writing your own contracts.
+大多数 OpenZeppelin 合约期望通过 https://solidity.readthedocs.io/en/latest/contracts.html#inheritance[继承] 来使用：在编写自己的合约时，你将 _继承_ 它们。
 
-This is the commonly found `is` syntax, like in `contract MyToken is ERC20`.
+这是常见的 `is` 语法，例如 `contract MyToken is ERC20`。
 
 [NOTE]
 ====
-Unlike ``contract``s, Solidity ``library``s are not inherited from and instead rely on the https://solidity.readthedocs.io/en/latest/contracts.html#using-for[`using for`] syntax.
+与 ``contract`` 不同，Solidity ``library`` 不会被继承，而是依赖于 https://solidity.readthedocs.io/en/latest/contracts.html#using-for[`using for`] 语法。
 
-OpenZeppelin Contracts has some ``library``s: most are in the xref:api:utils.adoc[Utils] directory.
+OpenZeppelin 合约有一些 ``library``：大多数在 xref:api:utils.adoc[Utils] 目录中。
 ====
 
-== Overriding
+== 覆盖 （Overriding）
 
-Inheritance is often used to add the parent contract's functionality to your own contract, but that's not all it can do. You can also _change_ how some parts of the parent behave using _overrides_.
+继承通常用于将父合约的功能添加到你自己的合约中，但这并不是它的全部功能。你还可以使用 _覆盖（overrides）_ 来 _更改_ 父合约某些部分的运行方式。
 
-For example, imagine you want to change xref:api:access.adoc#AccessControl[`AccessControl`] so that xref:api:access.adoc#AccessControl-revokeRole-bytes32-address-[`revokeRole`] can no longer be called. This can be achieved using overrides:
+例如，假设你想要更改 xref:api:access.adoc#AccessControl[`AccessControl`]，以使 xref:api:access.adoc#AccessControl-revokeRole-bytes32-address-[`revokeRole`] 不能再被调用。这可以通过覆盖来实现：
 
 ```solidity
 include::api:example$access-control/AccessControlModified.sol[]
 ```
 
-The old `revokeRole` is then replaced by our override, and any calls to it will immediately revert. We cannot _remove_ the function from the contract, but reverting on all calls is good enough.
+旧的 `revokeRole` 随后被我们的覆盖所替换，并且任何对其的调用都将立即还原（revert）。 我们无法从合约中 _删除_ 该函数，但是在所有调用上都还原（revert）就足够了。
 
-=== Calling `super`
+=== 调用 `super`
 
-Sometimes you want to _extend_ a parent's behavior, instead of outright changing it to something else. This is where `super` comes in.
+有时你想要 _扩展_ 父级的行为，而不是完全将其更改为其他内容。 这就是 `super` 的用武之地。
 
-The `super` keyword will let you call functions defined in a parent contract, even if they are overridden. This mechanism can be used to add additional checks to a function, emit events, or otherwise add functionality as you see fit.
+`super` 关键字将允许你调用在父合约中定义的函数，即使它们被覆盖也是如此。 此机制可用于向函数添加其他检查、发出事件或根据需要添加功能。
 
-TIP: For more information on how overrides work, head over to the https://solidity.readthedocs.io/en/latest/contracts.html#index-17[official Solidity documentation].
+TIP: 有关覆盖如何工作的更多信息，请访问 https://solidity.readthedocs.io/en/latest/contracts.html#index-17[官方 Solidity 文档]。
 
-Here is a modified version of xref:api:access.adoc#AccessControl[`AccessControl`] where xref:api:access.adoc#AccessControl-revokeRole-bytes32-address-[`revokeRole`] cannot be used to revoke the `DEFAULT_ADMIN_ROLE`:
-
+这是一个 xref:api:access.adoc#AccessControl[`AccessControl`] 的修改版本，其中 xref:api:access.adoc#AccessControl-revokeRole-bytes32-address-[`revokeRole`] 不能用于撤销（revoke） `DEFAULT_ADMIN_ROLE`：
 
 ```solidity
 include::api:example$access-control/AccessControlNonRevokableAdmin.sol[]
 ```
 
-The `super.revokeRole` statement at the end will invoke ``AccessControl``'s original version of `revokeRole`, the same code that would've run if there were no overrides in place.
+末尾的 `super.revokeRole` 语句将调用 ``AccessControl`` 的原始版本 `revokeRole`，即如果不存在覆盖，则会运行的相同代码。
 
-NOTE: The same rule is implemented and extended in xref:api:access.adoc#AccessControlDefaultAdminRules[`AccessControlDefaultAdminRules`], an extension that also adds enforced security measures for the `DEFAULT_ADMIN_ROLE`.
+NOTE: 相同的规则在 xref:api:access.adoc#AccessControlDefaultAdminRules[`AccessControlDefaultAdminRules`] 中实现和扩展，该扩展还为 `DEFAULT_ADMIN_ROLE` 添加了强制安全措施。
 
-== Security
+== 安全
 
-The maintainers of OpenZeppelin Contracts are mainly concerned with the correctness and security of the code as published in the library, and the combinations of base contracts with the official extensions from the library.
+OpenZeppelin 合约的维护者主要关注库中发布的代码以及基本合约与库中的官方扩展的组合的正确性和安全性。
 
-Custom overrides, especially to hooks, can disrupt important assumptions and may introduce security risks in the code that was previously secure. While we try to ensure the contracts remain secure in the face of a wide range of potential customizations, this is done in a best-effort manner. While we try to document all important assumptions, this should not be relied upon. Custom overrides should be carefully reviewed and checked against the source code of the contract they are customizing to fully understand their impact and guarantee their security.
+自定义覆盖，尤其是对钩子的覆盖，可能会破坏重要的假设，并可能在以前安全的代码中引入安全风险。 尽管我们尽力确保合约在面对各种潜在的自定义设置时保持安全，但这是尽最大努力完成的。 尽管我们尝试记录所有重要的假设，但不能依赖于此。 应对自定义覆盖进行仔细审查，并对照其自定义的合约的源代码进行检查，以充分了解其影响并保证其安全性。
 
-The way functions interact internally should not be assumed to stay stable across releases of the library. For example, a function that is used in one context in a particular release may not be used in the same context in the next release. Contracts that override functions should revalidate their assumptions when updating the version of OpenZeppelin Contracts they are built on.
+函数在内部交互的方式不应被假定为在库的各个版本中保持稳定。 例如，在特定版本中的一个上下文中使用的函数可能不会在下一个版本中的相同上下文中使用。 覆盖函数的合约在更新其构建的 OpenZeppelin 合约的版本时，应重新验证其假设。

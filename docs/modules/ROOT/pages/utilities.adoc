@@ -1,20 +1,20 @@
-= Utilities
+= 实用工具
 
-The OpenZeppelin Contracts provide a ton of useful utilities that you can use in your project. For a complete list, check out the xref:api:utils.adoc[API Reference].
-Here are some of the more popular ones.
+OpenZeppelin Contracts 提供了大量可以在你的项目中使用的实用工具。有关完整列表，请查看 xref:api:utils.adoc[API 参考]。
+以下是一些更受欢迎的工具。
 
 [[cryptography]]
-== Cryptography
+== 密码学
 
-=== Checking Signatures On-Chain
+=== 链上检查签名
 
-At a high level, signatures are a set of cryptographic algorithms that allow for a _signer_ to prove himself owner of a _private key_ used to authorize a piece of information (generally a transaction or `UserOperation`). Natively, the EVM supports the Elliptic Curve Digital Signature Algorithm (https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm[ECDSA]) using the secp256k1 curve, however other signature algorithms such as P256 and RSA are supported.
+从高层次来看，签名是一组密码学算法，允许 _签名者 _ 证明自己是 _ 私钥 _ 的所有者，该私钥用于授权一条信息 (通常是交易或 `UserOperation`)。EVM 原生支持椭圆曲线数字签名算法 (https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm[ECDSA])，使用 secp256k1 曲线，但也支持其他签名算法，如 P256 和 RSA。
 
-==== Ethereum Signatures (secp256k1)
+==== 以太坊签名 (secp256k1)
 
-xref:api:utils/cryptography.adoc#ECDSA[`ECDSA`] provides functions for recovering and managing Ethereum account ECDSA signatures. These are often generated via https://web3js.readthedocs.io/en/v1.7.3/web3-eth.html#sign[`web3.eth.sign`], and form a 65-byte array (of type `bytes` in Solidity) arranged the following way: `[[v (1)], [r (32)], [s (32)]]`.
+xref:api:utils/cryptography.adoc#ECDSA[`ECDSA`] 提供了用于恢复和管理以太坊账户 ECDSA 签名的函数。这些签名通常通过 https://web3js.readthedocs.io/en/v1.7.3/web3-eth.html#sign[`web3.eth.sign`] 生成，并形成一个 65 字节的数组 (在 Solidity 中为 `bytes` 类型)，排列方式如下：`[[v (1)], [r (32)], [s (32)]]`。
 
-The data signer can be recovered with xref:api:utils/cryptography.adoc#ECDSA-recover-bytes32-bytes-[`ECDSA.recover`], and its address compared to verify the signature. Most wallets will hash the data to sign and add the prefix `\x19Ethereum Signed Message:\n`, so when attempting to recover the signer of an Ethereum signed message hash, you'll want to use xref:api:utils/cryptography.adoc#MessageHashUtils-toEthSignedMessageHash-bytes32-[`toEthSignedMessageHash`].
+可以使用 xref:api:utils/cryptography.adoc#ECDSA-recover-bytes32-bytes-[`ECDSA.recover`] 恢复数据签名者，并将其地址与签名进行比较以进行验证。大多数钱包会对要签名的数据进行哈希处理，并添加前缀 `\x19Ethereum Signed Message:\n`，因此在尝试恢复以太坊签名消息哈希的签名者时，需要使用 xref:api:utils/cryptography.adoc#MessageHashUtils-toEthSignedMessageHash-bytes32-[`toEthSignedMessageHash`]。
 
 [source,solidity]
 ----
@@ -28,13 +28,13 @@ function _verify(bytes32 data, bytes memory signature, address account) internal
 }
 ----
 
-WARNING: Getting signature verification right is not trivial: make sure you fully read and understand xref:api:utils/cryptography.adoc#MessageHashUtils[`MessageHashUtils`]'s and xref:api:utils/cryptography.adoc#ECDSA[`ECDSA`]'s documentation.
+WARNING: 正确进行签名验证并非易事：请确保你已完整阅读并理解 xref:api:utils/cryptography.adoc#MessageHashUtils[`MessageHashUtils`] 和 xref:api:utils/cryptography.adoc#ECDSA[`ECDSA`] 的文档。
 
-==== P256 Signatures (secp256r1)
+==== P256 签名 (secp256r1)
 
-P256, also known as secp256r1, is one of the most used signature schemes. P256 signatures are standardized by the National Institute of Standards and Technology (NIST) and they are widely available in consumer hardware and software.
+P256，也称为 secp256r1，是最常用的签名方案之一。P256 签名由美国国家标准与技术研究院 (NIST) 标准化，并且在消费类硬件和软件中广泛可用。
 
-These signatures are different from regular Ethereum Signatures (secp256k1) in that they use a different elliptic curve to perform operations but have similar security guarantees.
+这些签名与常规以太坊签名 (secp256k1) 的不同之处在于，它们使用不同的椭圆曲线来执行操作，但具有相似的安全保证。
 
 [source,solidity]
 ----
@@ -51,7 +51,7 @@ function _verify(
 }
 ----
 
-By default, the `verify` function will try calling the https://github.com/ethereum/RIPs/blob/master/RIPS/rip-7212.md[RIP-7212] precompile at address `0x100` and will fallback to an implementation in Solidity if not available. We encourage you to use `verifyNative` if you know the precompile is available on the chain you're working on and on any other chain on which you intend to use the same bytecode in the future. In case of any doubts regarding the implementation roadmap of the native precompile `P256` of potential future target chains, please consider using `verifySolidity`.
+默认情况下，`verify` 函数将尝试调用地址 `0x100` 处的 https://github.com/ethereum/RIPs/blob/master/RIPS/rip-7212.md[RIP-7212] 预编译，如果不可用，将回退到 Solidity 中的实现。如果您知道预编译在您正在使用的链上可用，并且在您将来打算在其中使用相同字节码的任何其他链上可用，我们建议您使用 `verifyNative`。如果对潜在的未来目标链的本机预编译 `P256` 的实现路线图有任何疑问，请考虑使用 `verifySolidity`。
 
 [source,solidity]
 ----
@@ -64,22 +64,22 @@ function _verify(
     bytes32 qx,
     bytes32 qy
 ) internal pure returns (bool) {
-    // Will only call the precompile at address(0x100)
+    // 将仅调用 address(0x100) 处的预编译
     return data.verifyNative(data, r, s, qx, qy);
 }
 ----
 
-IMPORTANT: The P256 library only allows for `s` values in the lower order of the curve (i.e. `s <= N/2`) to prevent malleability. In case your tooling produces signatures in both sides of the curve, consider flipping the `s` value to keep compatibility.
+IMPORTANT: P256 库仅允许曲线的较低阶中的 `s` 值 (即 `s <= N/2`)，以防止可延展性。如果您使用的工具生成曲线两侧的签名，请考虑翻转 `s` 值以保持兼容性。
 
 ==== RSA
 
-RSA is a public-key cryptosystem that was popularized by corporate and governmental public key infrastructures (https://en.wikipedia.org/wiki/Public_key_infrastructure[PKIs]) and https://en.wikipedia.org/wiki/Domain_Name_System_Security_Extensions[DNSSEC]. 
+RSA 是一种公钥密码系统，因公司和政府公钥基础设施 (https://en.wikipedia.org/wiki/Public_key_infrastructure[PKIs]) 和 https://en.wikipedia.org/wiki/Domain_Name_System_Security_Extensions[DNSSEC] 而普及。
 
-This cryptosystem consists of using a private key that's the product of 2 large prime numbers. The message is signed by applying a modular exponentiation to its hash (commonly SHA256), where both the exponent and modulus compose the public key of the signer.
+此密码系统包括使用作为 2 个大素数的乘积的私钥。通过对其哈希值（通常为 SHA256）应用模幂运算来对消息进行签名，其中指数和模数都构成签名者的公钥。
 
-RSA signatures are known for being less efficient than elliptic curve signatures given the size of the keys, which are big compared to ECDSA keys with the same security level. Using plain RSA is considered unsafe, this is why the implementation uses the `EMSA-PKCS1-v1_5` encoding method from https://datatracker.ietf.org/doc/html/rfc8017[RFC8017] to include padding to the signature.
+RSA 签名以其密钥大小而闻名，因此效率低于椭圆曲线签名。密钥大小与具有相同安全级别的 ECDSA 密钥相比很大。使用纯 RSA 被认为是不安全的，这就是为什么该实现使用 https://datatracker.ietf.org/doc/html/rfc8017[RFC8017] 中的 `EMSA-PKCS1-v1_5` 编码方法来包含签名的填充。
 
-To verify a signature using RSA, you can leverage the xref:api:utils/cryptography.adoc#RSA[`RSA`] library that exposes a method for verifying RSA with the PKCS 1.5 standard:
+要使用 RSA 验证签名，您可以利用 xref:api:utils/cryptography.adoc#RSA[`RSA`] 库，该库公开了一种使用 PKCS 1.5 标准验证 RSA 的方法：
 
 [source,solidity]
 ----
@@ -95,21 +95,21 @@ function _verify(
 }
 ----
 
-IMPORTANT: Always use keys of at least 2048 bits. Additionally, be aware that PKCS#1 v1.5 allows for replayability due to the possibility of arbitrary optional parameters. To prevent replay attacks, consider including an onchain nonce or unique identifier in the message.
+IMPORTANT: 始终使用至少 2048 位的密钥。此外，请注意 PKCS#1 v1.5 允许重放，因为它可能存在任意可选参数。为防止重放攻击，请考虑在消息中包含链上 nonce 或唯一标识符。
 
-=== Signature Verification
+=== 签名验证
 
-The xref:api:utils/cryptography.adoc#SignatureChecker[`SignatureChecker`] library provides a unified interface for verifying signatures from different sources. It seamlessly supports:
+xref:api:utils/cryptography.adoc#SignatureChecker[`SignatureChecker`] 库为验证来自不同来源的签名提供了一个统一的接口。它无缝支持：
 
-* ECDSA signatures from externally owned accounts (EOAs)
-* ERC-1271 signatures from smart contract wallets like Argent and Safe Wallet
-* ERC-7913 signatures from keys that don't have their own Ethereum address
+* 来自外部拥有的帐户 (EOA) 的 ECDSA 签名
+* 来自智能合约钱包（如 Argent 和 Safe Wallet）的 ERC-1271 签名
+* 来自没有自己的以太坊地址的密钥的 ERC-7913 签名
 
-This allows developers to write signature verification code once and have it work across all these different signature types.
+这允许开发人员编写一次签名验证代码，并在所有这些不同的签名类型中使用它。
 
-==== Basic Signature Verification
+==== 基本签名验证
 
-For standard signature verification that supports both EOAs and ERC-1271 contracts:
+对于支持 EOA 和 ERC-1271 合同的标准签名验证：
 
 [source,solidity]
 ----
@@ -120,11 +120,11 @@ function _verifySignature(address signer, bytes32 hash, bytes memory signature) 
 }
 ----
 
-The library automatically detects whether the signer is an EOA or a contract and uses the appropriate verification method.
+该库会自动检测签名者是 EOA 还是合约，并使用适当的验证方法。
 
-==== ERC-1271 Contract Signatures
+==== ERC-1271 合约签名
 
-For smart contract wallets that implement ERC-1271, you can explicitly use:
+对于实现 ERC-1271 的智能合约钱包，您可以显式使用：
 
 [source,solidity]
 ----
@@ -133,11 +133,11 @@ function _verifyContractSignature(address signer, bytes32 hash, bytes memory sig
 }
 ----
 
-==== ERC-7913 Extended Signatures
+==== ERC-7913 扩展签名
 
-ERC-7913 extends signature verification to support keys that don't have their own Ethereum address. This is useful for integrating non-Ethereum cryptographic curves, hardware devices, or other identity systems.
+ERC-7913 扩展了签名验证，以支持没有自己的以太坊地址的密钥。这对于集成非以太坊加密曲线、硬件设备或其他身份系统非常有用。
 
-A signer is represented as a `bytes` object that concatenates a verifier address and a key: `verifier || key`.
+签名者表示为 `bytes` 对象，该对象连接验证者地址和密钥：`verifier || key`。
 
 [source,solidity]
 ----
@@ -146,15 +146,15 @@ function _verifyERC7913Signature(bytes memory signer, bytes32 hash, bytes memory
 }
 ----
 
-The verification process works as follows:
+验证过程如下：
 
-* If `signer.length < 20`: verification fails
-* If `signer.length == 20`: verification is done using standard signature checking
-* Otherwise: verification is done using an ERC-7913 verifier
+* 如果 `signer.length < 20`：验证失败
+* 如果 `signer.length == 20`：使用标准签名检查完成验证
+* 否则：使用 ERC-7913 验证者完成验证
 
-==== Batch Verification
+==== 批量验证
 
-For verifying multiple ERC-7913 signatures at once:
+用于一次验证多个 ERC-7913 签名：
 
 [source,solidity]
 ----
@@ -167,33 +167,33 @@ function _verifyMultipleSignatures(
 }
 ----
 
-This function will reject inputs that contain duplicated signers. Sorting the signers by their `keccak256` hash is recommended to minimize the gas cost.
+此函数将拒绝包含重复签名者的输入。建议按 `keccak256` 哈希值对签名者进行排序，以最大限度地降低 Gas 成本。
 
-This unified approach allows smart contracts to accept signatures from any supported source without needing to implement different verification logic for each type.
+这种统一的方法允许智能合约接受来自任何支持源的签名，而无需为每种类型实现不同的验证逻辑。
 
-=== Verifying Merkle Proofs
+=== 验证 Merkle 证明
 
-Developers can build a Merkle Tree off-chain, which allows for verifying that an element (leaf) is part of a set by using a Merkle Proof. This technique is widely used for creating whitelists (e.g., for airdrops) and other advanced use cases.
+开发人员可以在链下构建 Merkle 树，从而可以通过使用 Merkle 证明来验证元素（叶子）是否属于集合的一部分。这种技术广泛用于创建白名单（例如，用于空投）和其他高级用例。
 
-TIP: OpenZeppelin Contracts provides a https://github.com/OpenZeppelin/merkle-tree[JavaScript library] for building trees off-chain and generating proofs.
+TIP: OpenZeppelin Contracts 提供了一个 https://github.com/OpenZeppelin/merkle-tree[JavaScript 库]，用于在链下构建树和生成证明。
 
-xref:api:utils/cryptography.adoc#MerkleProof[`MerkleProof`] provides:
+xref:api:utils/cryptography.adoc#MerkleProof[`MerkleProof`] 提供：
 
-* xref:api:utils/cryptography.adoc#MerkleProof-verify-bytes32---bytes32-bytes32-[`verify`] - can prove that some value is part of a https://en.wikipedia.org/wiki/Merkle_tree[Merkle tree].
+* xref:api:utils/cryptography.adoc#MerkleProof-verify-bytes32---bytes32-bytes32-[`verify`] - 可以证明某个值是 https://en.wikipedia.org/wiki/Merkle_tree[Merkle 树] 的一部分。
 
-* xref:api:utils/cryptography.adoc#MerkleProof-multiProofVerify-bytes32-bytes32---bytes32---bool---[`multiProofVerify`] - can prove multiple values are part of a Merkle tree.
+* xref:api:utils/cryptography.adoc#MerkleProof-multiProofVerify-bytes32-bytes32---bytes32---bool---[`multiProofVerify`] - 可以证明多个值是 Merkle 树的一部分。
 
-For an on-chain Merkle Tree, see the xref:api:utils.adoc#MerkleTree[`MerkleTree`] library.
+对于链上 Merkle 树，请参见 xref:api:utils.adoc#MerkleTree[`MerkleTree`] 库。
 
 [[introspection]]
-== Introspection
+== 自省
 
-In Solidity, it's frequently helpful to know whether or not a contract supports an interface you'd like to use. ERC-165 is a standard that helps do runtime interface detection. Contracts provide helpers both for implementing ERC-165 in your contracts and querying other contracts:
+在 Solidity 中，了解合约是否支持您想要使用的接口通常很有帮助。ERC-165 是一个有助于进行运行时接口检测的标准。合约提供帮助程序，可用于在您的合约中实现 ERC-165 和查询其他合约：
 
-* xref:api:utils.adoc#IERC165[`IERC165`] — this is the ERC-165 interface that defines xref:api:utils.adoc#IERC165-supportsInterface-bytes4-[`supportsInterface`]. When implementing ERC-165, you'll conform to this interface.
-* xref:api:utils.adoc#ERC165[`ERC165`] — inherit this contract if you'd like to support interface detection using a lookup table in contract storage. You can register interfaces using xref:api:utils.adoc#ERC165-_registerInterface-bytes4-[`_registerInterface(bytes4)`]: check out example usage as part of the ERC-721 implementation.
-* xref:api:utils.adoc#ERC165Checker[`ERC165Checker`] — ERC165Checker simplifies the process of checking whether or not a contract supports an interface you care about.
-* include with `using ERC165Checker for address;`
+* xref:api:utils.adoc#IERC165[`IERC165`] — 这是 ERC-165 接口，定义了 xref:api:utils.adoc#IERC165-supportsInterface-bytes4-[`supportsInterface`]。实现 ERC-165 时，您将符合此接口。
+* xref:api:utils.adoc#ERC165[`ERC165`] — 如果您希望使用合约存储中的查找表来支持接口检测，请继承此合约。您可以使用 xref:api:utils.adoc#ERC165-_registerInterface-bytes4-[`_registerInterface(bytes4)`] 注册接口：查看作为 ERC-721 实现的一部分的示例用法。
+* xref:api:utils.adoc#ERC165Checker[`ERC165Checker`] — ERC165Checker 简化了检查合约是否支持您关心的接口的过程。
+* 使用 `using ERC165Checker for address;` 包含
 * xref:api:utils.adoc#ERC165Checker-_supportsInterface-address-bytes4-[`myAddress._supportsInterface(bytes4)`]
 * xref:api:utils.adoc#ERC165Checker-_supportsAllInterfaces-address-bytes4---[`myAddress._supportsAllInterfaces(bytes4[\])`]
 
@@ -205,7 +205,7 @@ contract MyContract {
     bytes4 private InterfaceId_ERC721 = 0x80ac58cd;
 
     /**
-     * @dev transfer an ERC-721 token from this contract to someone else
+     * @dev 将 ERC-721 令牌从此合约转移给其他人
      */
     function transferERC721(
         address token,
@@ -221,11 +221,11 @@ contract MyContract {
 ----
 
 [[math]]
-== Math
+== 数学
 
-Although Solidity already provides math operators (i.e. `+`, `-`, etc.), Contracts includes xref:api:utils.adoc#Math[`Math`]; a set of utilities for dealing with mathematical operators, with support for extra operations (e.g., xref:api:utils.adoc#Math-average-uint256-uint256-[`average`]) and xref:api:utils.adoc#SignedMath[`SignedMath`]; a library specialized in signed math operations.
+尽管 Solidity 已经提供了数学运算符（即 `+`，`-` 等），但 Contracts 包括 xref:api:utils.adoc#Math[`Math`]; 一组用于处理数学运算符的实用程序，支持额外的运算（例如，xref:api:utils.adoc#Math-average-uint256-uint256-[`average`]）和 xref:api:utils.adoc#SignedMath[`SignedMath`]; 一个专门用于有符号数学运算的库。
 
-Include these contracts with `using Math for uint256` or `using SignedMath for int256` and then use their functions in your code:
+使用 `using Math for uint256` 或 `using SignedMath for int256` 包含这些合约，然后在您的代码中使用它们的函数：
 
 [source,solidity]
 ----
@@ -248,32 +248,32 @@ contract MyContract {
 }
 ----
 
-Easy!
+简单！
 
-TIP: While working with different data types that might require casting, you can use xref:api:utils.adoc#SafeCast[`SafeCast`] for type casting with added overflow checks.
+TIP: 在使用可能需要强制转换的不同数据类型时，您可以使用 xref:api:utils.adoc#SafeCast[`SafeCast`] 进行类型强制转换，并添加溢出检查。
 
 [[structures]]
-== Structures
+== 结构体
 
-Some use cases require more powerful data structures than arrays and mappings offered natively in Solidity. Contracts provides these libraries for enhanced data structure management:
+某些用例需要比 Solidity 本身提供的数组和映射更强大的数据结构。Contracts 提供了这些库来增强数据结构的管理：
 
-- xref:api:utils.adoc#BitMaps[`BitMaps`]: Store packed booleans in storage.
-- xref:api:utils.adoc#Checkpoints[`Checkpoints`]: Checkpoint values with built-in lookups.
-- xref:api:utils.adoc#DoubleEndedQueue[`DoubleEndedQueue`]: Store items in a queue with `pop()` and `queue()` constant time operations.
-- xref:api:utils.adoc#EnumerableSet[`EnumerableSet`]: A https://en.wikipedia.org/wiki/Set_(abstract_data_type)[set] with enumeration capabilities.
-- xref:api:utils.adoc#EnumerableMap[`EnumerableMap`]: A `mapping` variant with enumeration capabilities.
-- xref:api:utils.adoc#MerkleTree[`MerkleTree`]: An on-chain https://wikipedia.org/wiki/Merkle_Tree[Merkle Tree] with helper functions.
-- xref:api:utils.adoc#Heap.sol[`Heap`]: A https://en.wikipedia.org/wiki/Binary_heap[binary heap] to store elements with priority defined by a compartor function.
+- xref:api:utils.adoc#BitMaps[`BitMaps`]: 在存储中存储打包的布尔值。
+- xref:api:utils.adoc#Checkpoints[`Checkpoints`]: 具有内置查找功能的检查点值。
+- xref:api:utils.adoc#DoubleEndedQueue[`DoubleEndedQueue`]: 将项目存储在队列中，`pop()` 和 `queue()` 常量时间操作。
+- xref:api:utils.adoc#EnumerableSet[`EnumerableSet`]: 具有枚举功能的 https://en.wikipedia.org/wiki/Set_(abstract_data_type)[集合]。
+- xref:api:utils.adoc#EnumerableMap[`EnumerableMap`]: 具有枚举功能的 `mapping` 变体。
+- xref:api:utils.adoc#MerkleTree[`MerkleTree`]: 一个链上的 https://wikipedia.org/wiki/Merkle_Tree[Merkle 树]，带有辅助函数。
+- xref:api:utils.adoc#Heap.sol[`Heap`]: 一个 https://en.wikipedia.org/wiki/Binary_heap[二叉堆]，用于存储元素，其优先级由分层函数定义。
 
-The `Enumerable*` structures are similar to mappings in that they store and remove elements in constant time and don't allow for repeated entries, but they also support _enumeration_, which means you can easily query all stored entries both on and off-chain.
+`Enumerable*` 结构与映射类似，因为它们以恒定的时间存储和删除元素，并且不允许重复条目，但它们也支持 _ 枚举 _，这意味着您可以轻松地在链上和链下查询所有存储的条目。
 
-=== Building a Merkle Tree
+=== 构建 Merkle 树
 
-Building an on-chain Merkle Tree allows developers to keep track of the history of roots in a decentralized manner. For these cases, the xref:api:utils.adoc#MerkleTree[`MerkleTree`] includes a predefined structure with functions to manipulate the tree (e.g. pushing values or resetting the tree).
+构建链上 Merkle 树允许开发人员以分散的方式跟踪根的历史记录。对于这些情况，xref:api:utils.adoc#MerkleTree[`MerkleTree`] 包括一个预定义的结构，其中包含用于操作树的函数（例如，推送值或重置树）。
 
-The Merkle Tree does not keep track of the roots intentionally, so that developers can choose their tracking mechanism. Setting up and using a Merkle Tree in Solidity is as simple as follows:
+Merkle 树不会有意跟踪根，以便开发人员可以选择其跟踪机制。在 Solidity 中设置和使用 Merkle 树非常简单，如下所示：
 
-NOTE: Functions are exposed without access control for demonstration purposes
+NOTE: 为了演示目的，这些函数在没有访问控制的情况下公开。
 
 [source,solidity]
 ----
@@ -286,13 +286,13 @@ function setup(uint8 _depth, bytes32 _zero) public /* onlyOwner */ {
 
 function push(bytes32 leaf) public /* onlyOwner */ {
     (uint256 leafIndex, bytes32 currentRoot) = _tree.push(leaf);
-    // Store the new root.
+    // 存储新根。
 }
 ----
 
-The library also supports custom hashing functions, which can be passed as an extra parameter to the xref:api:utils.adoc#MerkleTree-push-struct-MerkleTree-Bytes32PushTree-bytes32-[`push`] and xref:api:utils.adoc#MerkleTree-setup-struct-MerkleTree-Bytes32PushTree-uint8-bytes32-[`setup`] functions.
+该库还支持自定义哈希函数，这些函数可以作为额外的参数传递给 xref:api:utils.adoc#MerkleTree-push-struct-MerkleTree-Bytes32PushTree-bytes32-[`push`] 和 xref:api:utils.adoc#MerkleTree-setup-struct-MerkleTree-Bytes32PushTree-uint8-bytes32-[`setup`] 函数。
 
-Using custom hashing functions is a sensitive operation. After setup, it requires to keep using the same hashing function for every new value pushed to the tree to avoid corrupting the tree. For this reason, it's a good practice to keep your hashing function static in your implementation contract as follows:
+使用自定义哈希函数是一项敏感的操作。设置后，它要求对推送到树的每个新值保持使用相同的哈希函数，以避免损坏树。因此，最好在您的实施合约中保持您的哈希函数静态，如下所示：
 
 [source,solidity]
 ----
@@ -305,25 +305,25 @@ function setup(uint8 _depth, bytes32 _zero) public /* onlyOwner */ {
 
 function push(bytes32 leaf) public /* onlyOwner */ {
     (uint256 leafIndex, bytes32 currentRoot) = _tree.push(leaf, _hashFn);
-    // Store the new root.
+    // 存储新根。
 }
 
 function _hashFn(bytes32 a, bytes32 b) internal view returns(bytes32) {
-    // Custom hash function implementation
-    // Kept as an internal implementation detail to 
-    // guarantee the same function is always used
+    // 自定义哈希函数实现
+    // 保留为内部实现细节以
+    // 保证始终使用相同的函数
 }
----- 
+----
 
-=== Using a Heap
+=== 使用堆
 
-A https://en.wikipedia.org/wiki/Binary_heap[binary heap] is a data structure that always stores the most important element at its peak and it can be used as a priority queue.
+https://en.wikipedia.org/wiki/Binary_heap[二叉堆] 是一种始终将最重要的元素存储在其峰值处的数据结构，可以用作优先级队列。
 
-To define what is most important in a heap, these frequently take comparator functions that tell the binary heap whether a value has more relevance than another.
+为了定义堆中最重要的内容，这些操作经常接受比较器函数，这些函数告诉二叉堆一个值是否比另一个值更相关。
 
-OpenZeppelin Contracts implements a Heap data structure with the properties of a binary heap. The heap uses the xref:api:utils.adoc#Comparators-lt-uint256-uint256-[`lt`] function by default but allows to customize its comparator.
+OpenZeppelin Contracts 实现了一个具有二叉堆属性的堆数据结构。默认情况下，堆使用 xref:api:utils.adoc#Comparators-lt-uint256-uint256-[`lt`] 函数，但允许自定义其比较器。
 
-When using a custom comparator, it's recommended to wrap your function to avoid the possibility of mistakenly using a different comparator function:
+使用自定义比较器时，建议包装您的函数以避免错误地使用其他比较器函数的可能性：
 
 [source,solidity]
 ----
@@ -340,23 +340,22 @@ function replace(Uint256Heap storage self, uint256 newValue) internal returns (u
 }
 ----
 
-
 [[misc]]
-== Misc
+== 其他
 
-=== Packing
+=== 打包
 
-The storage in the EVM is shaped in chunks of 32 bytes, each of this chunks is known as a _slot_, and can hold multiple values together as long as these values don't exceed its size. These properties of the storage allow for a technique known as _packing_, that consists of placing values together on a single storage slot to reduce the costs associated to reading and writing to multiple slots instead of just one.
+EVM 中的存储被塑造成 32 字节的块，每个块称为 _ 插槽 _，并且只要这些值不超过其大小，就可以将多个值一起保存。存储的这些属性允许一种称为 _ 打包 _ 的技术，该技术包括将值一起放置在单个存储插槽中，以减少与读取和写入多个插槽而不是仅一个插槽相关的成本。
 
-Commonly, developers pack values using structs that place values together so they fit better in storage. However, this approach requires to load such struct from either calldata or memory. Although sometimes necessary, it may be useful to pack values in a single slot and treat it as a packed value without involving calldata or memory.
+通常，开发人员使用将值放置在一起的结构来打包值，以便它们更好地适应存储。但是，这种方法需要从 calldata 或内存中加载这样的结构。虽然有时是必要的，但在单个插槽中打包值并将其视为打包值而不涉及 calldata 或内存可能很有用。
 
-The xref:api:utils.adoc#Packing[`Packing`] library is a set of utilities for packing values that fit in 32 bytes. The library includes 3 main functionalities:
+xref:api:utils.adoc#Packing[`Packing`] 库是一组用于打包适合 32 字节的值的实用程序。该库包括 3 个主要功能：
 
-* Packing 2 `bytesXX` values
-* Extracting a packed `bytesXX` value from a `bytesYY`
-* Replacing a packed `bytesXX` value from a `bytesYY`
+* 打包 2 个 `bytesXX` 值
+* 从 `bytesYY` 中提取打包的 `bytesXX` 值
+* 从 `bytesYY` 中替换打包的 `bytesXX` 值
 
-With these primitives, one can build custom functions to create custom packed types. For example, suppose you need to pack an `address` of 20 bytes with a `bytes4` selector and an `uint64` time period:
+使用这些原语，可以构建自定义函数来创建自定义打包类型。例如，假设您需要将 20 字节的 `address` 与 `bytes4` 选择器和 `uint64` 时间段打包在一起：
 
 [source,solidity]
 ----
@@ -374,10 +373,10 @@ function _unpack(bytes32 pack) external pure returns (address, bytes4, uint64) {
 }
 ----
 
-=== Storage Slots
+=== 存储插槽
 
-Solidity allocates a storage pointer for each variable declared in a contract. However, there are cases when it's required to access storage pointers that can't be derived by using regular Solidity.
-For those cases, the xref:api:utils.adoc#StorageSlot[`StorageSlot`] library allows for manipulating storage slots directly.
+Solidity 为合约中声明的每个变量分配一个存储指针。但是，在某些情况下，需要访问无法通过使用常规 Solidity 派生的存储指针。
+对于这些情况，xref:api:utils.adoc#StorageSlot[`StorageSlot`] 库允许直接操作存储插槽。
 
 [source,solidity]
 ----
@@ -393,7 +392,7 @@ function _setImplementation(address newImplementation) internal {
 }
 ----
 
-The xref:api:utils.adoc#TransientSlot[`TransientSlot`] library supports transient storage through user defined value types (https://docs.soliditylang.org/en/latest/types.html#user-defined-value-types[UDVTs]), which enables the same value types as in Solidity.
+xref:api:utils.adoc#TransientSlot[`TransientSlot`] 库通过用户定义的值类型 (https://docs.soliditylang.org/en/latest/types.html#user-defined-value-types[UDVTs]) 支持瞬时存储，它支持与 Solidity 中相同的值类型。
 
 [source,solidity]
 ----
@@ -408,11 +407,11 @@ function _setTransientLock(bool lock) internal {
 }
 ----
 
-WARNING: Manipulating storage slots directly is an advanced practice. Developers MUST make sure that the storage pointer is not colliding with other variables.
+WARNING: 直接操作存储插槽是一种高级实践。开发人员必须确保存储指针不会与其他变量冲突。
 
-One of the most common use cases for writing directly to storage slots is ERC-7201 for namespaced storage, which is guaranteed to not collide with other storage slots derived by Solidity.
+直接写入存储插槽的最常见的用例之一是用于命名空间存储的 ERC-7201，它可以保证不会与 Solidity 派生的其他存储插槽冲突。
 
-Users can leverage this standard using the xref:api:utils.adoc#SlotDerivation[`SlotDerivation`] library.
+用户可以使用 xref:api:utils.adoc#SlotDerivation[`SlotDerivation`] 库来利用此标准。
 
 [source,solidity]
 ----
@@ -426,11 +425,11 @@ function erc7201Pointer() internal view returns (bytes32) {
 
 === Base64
 
-xref:api:utils.adoc#Base64[`Base64`] util allows you to transform `bytes32` data into its Base64 `string` representation.
+xref:api:utils.adoc#Base64[`Base64`] util 允许您将 `bytes32` 数据转换为其 Base64 `string` 表示形式。
 
-This is especially useful for building URL-safe tokenURIs for both xref:api:token/ERC721.adoc#IERC721Metadata-tokenURI-uint256-[`ERC-721`] or xref:api:token/ERC1155.adoc#IERC1155MetadataURI-uri-uint256-[`ERC-1155`]. This library provides a clever way to serve URL-safe https://developer.mozilla.org/docs/Web/HTTP/Basics_of_HTTP/Data_URIs/[Data URI] compliant strings to serve on-chain data structures.
+这对于为 xref:api:token/ERC721.adoc#IERC721Metadata-tokenURI-uint256-[`ERC-721`] 或 xref:api:token/ERC1155.adoc#IERC1155MetadataURI-uri-uint256-[`ERC-1155`] 构建 URL 安全的 tokenURI 特别有用。该库提供了一种巧妙的方法来提供 URL 安全的 https://developer.mozilla.org/docs/Web/HTTP/Basics_of_HTTP/Data_URIs/[Data URI] 兼容字符串，以提供链上数据结构。
 
-Here is an example to send JSON Metadata through a Base64 Data URI using an ERC-721:
+这是一个通过使用 ERC-721 的 Base64 数据 URI 发送 JSON 元数据的示例：
 
 [source,solidity]
 ----
@@ -439,16 +438,16 @@ include::api:example$utilities/Base64NFT.sol[]
 
 === Multicall
 
-The `Multicall` abstract contract comes with a `multicall` function that bundles together multiple calls in a single external call. With it, external accounts may perform atomic operations comprising several function calls. This is not only useful for EOAs to make multiple calls in a single transaction, it's also a way to revert a previous call if a later one fails.
+`Multicall` 抽象合约带有一个 `multicall` 函数，该函数将多个调用捆绑到单个外部调用中。使用它，外部帐户可以执行包含多个函数调用的原子操作。这不仅对 EOA 在单个交易中进行多个调用有用，而且是在后面的调用失败时恢复先前调用的方法。
 
-Consider this dummy contract:
+考虑一下这个虚拟合约：
 
 [source,solidity]
 ----
 include::api:example$utilities/Multicall.sol[]
 ----
 
-This is how to call the `multicall` function using Ethers.js, allowing `foo` and `bar` to be called in a single transaction:
+这是如何使用 Ethers.js 调用 `multicall` 函数，允许在单个交易中调用 `foo` 和 `bar`：
 [source,javascript]
 ----
 // scripts/foobar.js
@@ -461,43 +460,43 @@ await instance.multicall([
 ]);
 ----
 
-=== Memory
+=== 内存
 
-The xref:api:utils.adoc#Memory[`Memory`] library provides functions for advanced use cases that require granular memory management. A common use case is to avoid unnecessary memory expansion costs when performing repeated operations that allocate memory in a loop. Consider the following example:
+xref:api:utils.adoc#Memory[`Memory`] 库为需要细粒度内存管理的高级用例提供了函数。一个常见的用例是避免在执行循环中分配内存的重复操作时产生不必要的内存扩展成本。考虑以下示例：
 
 [source,solidity]
 ----
 function processMultipleItems(uint256[] memory items) internal {
   for (uint256 i = 0; i < items.length; i++) {
     bytes memory tempData = abi.encode(items[i], block.timestamp);
-    // Process tempData...
+    // 处理 tempData...
   }
 }
 ----
 
-Note that each iteration allocates new memory for `tempData`, causing the memory to expand continuously. This can be optimized by resetting the memory pointer between iterations:
+请注意，每次迭代都会为 `tempData` 分配新的内存，导致内存不断扩展。可以通过重置迭代之间的内存指针来优化这一点：
 
 [source,solidity]
 ----
 function processMultipleItems(uint256[] memory items) internal {
-  Memory.Pointer ptr = Memory.getFreeMemoryPointer(); // Cache pointer
+  Memory.Pointer ptr = Memory.getFreeMemoryPointer(); // 缓存指针
   for (uint256 i = 0; i < items.length; i++) {
     bytes memory tempData = abi.encode(items[i], block.timestamp);
-    // Process tempData...
-    Memory.setFreeMemoryPointer(ptr); // Reset pointer for reuse
+    // 处理 tempData...
+    Memory.setFreeMemoryPointer(ptr); // 重置指针以供重用
   }
 }
 ----
 
-This way, memory allocated for `tempData` in each iteration is reused, significantly reducing memory expansion costs when processing many items.
+这样，每次迭代中为 `tempData` 分配的内存都会被重用，从而显著降低了处理多个项目时内存扩展的成本。
 
-IMPORTANT: Only use these functions after carefully confirming they're necessary. By default, Solidity handles memory safely. Using this library without understanding memory layout and safety may be dangerous. See the https://docs.soliditylang.org/en/v0.8.20/internals/layout_in_memory.html[memory layout] and https://docs.soliditylang.org/en/v0.8.20/assembly.html#memory-safety[memory safety] documentation for details.
+IMPORTANT: 仅在仔细确认它们是必需的后才使用这些函数。默认情况下，Solidity 安全地处理内存。在不了解内存布局和安全性的情况下使用此库可能很危险。有关详细信息，请参阅 https://docs.soliditylang.org/en/v0.8.20/internals/layout_in_memory.html[内存布局] 和 https://docs.soliditylang.org/en/v0.8.20/assembly.html#memory-safety[内存安全] 文档。
 
-=== Historical Block Hashes
+=== 历史区块哈希
 
-xref:api:utils.adoc#Blockhash[`Blockhash`] provides L2 protocol developers with extended access to historical block hashes beyond Ethereum's native 256-block limit. By leveraging https://eips.ethereum.org/EIPS/eip-2935[EIP-2935]'s history storage contract, the library enables access to block hashes up to 8,191 blocks in the past, making it invaluable for L2 fraud proofs and state verification systems.
+xref:api:utils.adoc#Blockhash[`Blockhash`] 为 L2 协议开发人员提供了对超过以太坊原生 256 区块限制的历史区块哈希的扩展访问权限。通过利用 https://eips.ethereum.org/EIPS/eip-2935[EIP-2935] 的历史存储合约，该库能够访问过去多达 8,191 个区块的区块哈希，使其对于 L2 欺诈证明和状态验证系统非常有价值。
 
-The library seamlessly combines native `BLOCKHASH` opcode access for recent blocks (≤256) with EIP-2935 history storage queries for older blocks (257-8,191). It handles edge cases gracefully by returning zero for future blocks or those beyond the history window, matching the EVM's behavior. The implementation uses gas-efficient assembly for static calls to the history storage contract.
+该库无缝地结合了本机 `BLOCKHASH` 操作码对最近区块 (≤256) 的访问与 EIP-2935 历史存储查询对较旧区块 (257-8,191) 的访问。它通过为未来区块或超出历史窗口的区块返回零，从而以优雅的方式处理边缘情况，从而与 EVM 的行为相匹配。该实现使用高效的 Gas 汇编静态调用历史存储合约。
 
 [source,solidity]
 ----
@@ -510,15 +509,15 @@ contract L1Inbox {
 }
 ----
 
-IMPORTANT: After EIP-2935 activation, it takes 8,191 blocks to completely fill the history storage. Before that, only block hashes since the fork block will be available.
+IMPORTANT: 在 EIP-2935 激活后，需要 8,191 个区块才能完全填充历史存储。在此之前，只有自 Fork 区块以来的区块哈希可用。
 
-=== Time
+=== 时间
 
-The xref:api:utils.adoc#Time[`Time`] library provides helpers for manipulating time-related objects in a type-safe manner. It uses `uint48` for timepoints and `uint32` for durations, helping to reduce gas costs while providing adequate precision.
+xref:api:utils.adoc#Time[`Time`] 库提供了以类型安全的方式操作与时间相关的对象的辅助程序。它使用 `uint48` 作为时间点，使用 `uint32` 作为持续时间，有助于降低 Gas 成本，同时提供足够的精度。
 
-One of its key features is the `Delay` type, which represents a duration that can automatically change its value at a specified point in the future while maintaining delay guarantees. For example, when reducing a delay value (e.g., from 7 days to 1 day), the change only takes effect after the difference between the old and new delay (i.e. a 6 days) or a minimum setback period, preventing an attacker who gains admin access from immediately reducing security timeouts and executing sensitive operations. This is particularly useful for governance and security mechanisms where timelock periods need to be enforced.
+它的主要功能之一是 `Delay` 类型，它表示一个持续时间，该持续时间可以在将来到达指定时间点自动更改其值，同时保持延迟保证。例如，当减少延迟值（例如，从 7 天减少到 1 天）时，更改仅在旧延迟和新延迟之间的差值（即 6 天）或最小回退期后生效，以防止获得管理员访问权限的攻击者立即减少安全超时并执行敏感操作。这对于需要强制执行时间锁定期的治理和安全机制特别有用。
 
-Consider this example for using and safely updating Delays:   
+考虑以下使用和安全更新 Delay 的示例：
 [source,solidity]
 ----
 // SPDX-License-Identifier: MIT
@@ -536,11 +535,11 @@ contract MyDelayedContract {
     }
 
     function schedule(bytes32 operationId) external {
-        // Get the current `_delay` value, respecting any pending delay changes if they've taken effect
+        // 获取当前的 `_delay` 值，如果在生效前生效，则尊重任何待处理的延迟更改
         uint32 currentDelay = _delay.get();
         uint48 executionTime = Time.timestamp() + currentDelay;
         
-        // ... schedule the operation at `executionTime`
+        // ... 在 `executionTime` 安排操作
     }
     
     function execute(bytes32 operationId) external {
@@ -548,37 +547,37 @@ contract MyDelayedContract {
         require(executionTime > 0, "Operation not scheduled");
         require(Time.timestamp() >= executionTime, "Delay not elapsed yet");
 
-        // ... execute the operation
+        // ... 执行操作
     }
     
-    // Update the delay with `Time`'s safety mechanism
+    // 使用 `Time` 的安全机制更新延迟
     function updateDelay(uint32 newDelay) external {
         (Time.Delay updatedDelay, uint48 effect) = _delay.withUpdate(
-            newDelay,    // The new delay value
-            5 days       // Minimum setback if reducing the delay
+            newDelay,    // 新的延迟值
+            5 days       // 如果缩短延迟，则最小回退
         );
         
         _delay = updatedDelay;
 
-        // ... emit events
+        // ... 发出事件
     }
     
-    // Get complete delay details including pending changes
+    // 获取完整的延迟详细信息，包括待处理的更改
     function getDelayDetails() external view returns (
-        uint32 currentValue, // The current delay value
-        uint32 pendingValue, // The pending delay value
-        uint48 effectTime    // The timepoint when the pending delay change takes effect
+        uint32 currentValue, // 当前延迟值
+        uint32 pendingValue, // 待处理的延迟值
+        uint48 effectTime    // 待处理的延迟更改生效的时间点
     ) {
         return _delay.getFull();
     }
 }
 ----
 
-This pattern is used extensively in OpenZeppelin's xref:api:access.adoc#AccessManager[AccessManager] for implementing secure time-based access control. For example, when changing an admin delay:
+此模式在 OpenZeppelin 的xref:api:access.adoc#AccessManager[AccessManager] 中广泛用于实现安全的基于时间的访问控制。例如，当更改管理员延迟时：
 
 [source,solidity]
 ----
-// From AccessManager.sol
+// 来自 AccessManager.sol
 function _setTargetAdminDelay(address target, uint32 newDelay) internal virtual {
     uint48 effect;
     (_targets[target].adminDelay, effect) = _targets[target].adminDelay.withUpdate(

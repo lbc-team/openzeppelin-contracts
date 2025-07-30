@@ -1,17 +1,17 @@
 = Contracts
 
-*A library for secure smart contract development.* Build on a solid foundation of community-vetted code.
+*一个用于安全智能合约开发的库。* 在社区验证代码的坚实基础上构建。
 
- * Implementations of standards like xref:erc20.adoc[ERC20] and xref:erc721.adoc[ERC721].
- * Flexible xref:access-control.adoc[role-based permissioning] scheme.
- * Reusable xref:utilities.adoc[Solidity components] to build custom contracts and complex decentralized systems.
+ * 实现标准，如 xref:erc20.adoc[ERC20] 和 xref:erc721.adoc[ERC721]。
+ * 灵活的 xref:access-control.adoc[基于角色的权限控制]方案。
+ * 可重用的 xref:utilities.adoc[Solidity 组件]，用于构建自定义合约和复杂的去中心化系统。
 
-IMPORTANT: OpenZeppelin Contracts uses semantic versioning to communicate backwards compatibility of its API and storage layout. For upgradeable contracts, the storage layout of different major versions should be assumed incompatible, for example, it is unsafe to upgrade from 4.9.3 to 5.0.0. Learn more at xref:backwards-compatibility.adoc[Backwards Compatibility].
+重要提示：OpenZeppelin Contracts 使用语义化版本控制来传递其 API 和存储布局的向后兼容性。对于可升级合约，不同主要版本的存储布局应假定为不兼容，例如，从 4.9.3 升级到 5.0.0 是不安全的。了解更多信息，请参见 xref:backwards-compatibility.adoc[向后兼容性]。
 
-== Overview
+== 概述
 
 [[install]]
-=== Installation
+=== 安装
 
 ==== Hardhat (npm)
 
@@ -21,50 +21,50 @@ $ npm install @openzeppelin/contracts
 
 ==== Foundry (git)
 
-WARNING: When installing via git, it is a common error to use the `master` branch. This is a development branch that should be avoided in favor of tagged releases. The release process involves security measures that the `master` branch does not guarantee.
+WARNING: 通过 git 安装时，一个常见的错误是使用 `master` 分支。这是一个开发分支，应该避免使用它，而应该使用已标记的发布版本。发布过程涉及安全措施，而 `master` 分支不能保证这些措施。
 
-WARNING: Foundry installs the latest version initially, but subsequent `forge update` commands will use the `master` branch.
+WARNING: Foundry 最初安装的是最新版本，但后续的 `forge update` 命令将使用 `master` 分支。
 
 ```console
 $ forge install OpenZeppelin/openzeppelin-contracts
 ```
 
-Add `@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/` in `remappings.txt.` 
+在 `remappings.txt` 中添加 `@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/`。
 
 [[usage]]
-=== Usage
+=== 用法
 
-Once installed, you can use the contracts in the library by importing them:
+安装完成后，您可以通过导入来使用库中的合约：
 
 [source,solidity]
 ----
 include::api:example$MyNFT.sol[]
 ----
 
-TIP: If you're new to smart contract development, head to xref:learn::developing-smart-contracts.adoc[Developing Smart Contracts] to learn about creating a new project and compiling your contracts.
+TIP: 如果你是智能合约开发的新手，请前往 xref:learn::developing-smart-contracts.adoc[开发智能合约] 了解如何创建一个新项目并编译你的合约。
 
-To keep your system secure, you should **always** use the installed code as-is, and neither copy-paste it from online sources, nor modify it yourself. The library is designed so that only the contracts and functions you use are deployed, so you don't need to worry about it needlessly increasing gas costs.
+为了保证你的系统安全，你应该**始终**按原样使用已安装的代码，既不要从在线来源复制粘贴，也不要自己修改。该库的设计使得只有你使用的合约和函数才会被部署，所以你不需要担心它不必要地增加 Gas 成本。
 
 [[security]]
-== Security
+== 安全
 
-Please report any security issues you find via our https://www.immunefi.com/bounty/openzeppelin[bug bounty program on Immunefi] or directly to security@openzeppelin.org.
+请通过我们的 https://www.immunefi.com/bounty/openzeppelin[Immunefi 上的漏洞赏金计划]或直接发送邮件至 security@openzeppelin.org 报告您发现的任何安全问题。
 
-The https://contracts.openzeppelin.com/security[Security Center] contains more details about the secure development process.
+https://contracts.openzeppelin.com/security[安全中心] 包含关于安全开发过程的更多细节。
 
 [[next-steps]]
-== Learn More
+== 了解更多
 
-The guides in the sidebar will teach about different concepts, and how to use the related contracts that OpenZeppelin Contracts provides:
+侧边栏中的指南将会讲述不同的概念，以及如何使用 OpenZeppelin Contracts 提供的相关合约：
 
-* xref:access-control.adoc[Access Control]: decide who can perform each of the actions on your system.
-* xref:tokens.adoc[Tokens]: create tradable assets or collectibles, like the well known xref:erc20.adoc[ERC20] and xref:erc721.adoc[ERC721] standards.
-* xref:utilities.adoc[Utilities]: generic useful tools, including non-overflowing math, signature verification, and trustless paying systems.
+* xref:access-control.adoc[访问控制]：决定谁可以执行你系统上的每个操作。
+* xref:tokens.adoc[代币]：创建可交易的资产或收藏品，如众所周知的 xref:erc20.adoc[ERC20] 和 xref:erc721.adoc[ERC721] 标准。
+* xref:utilities.adoc[实用工具]：通用的实用工具，包括无溢出的数学运算、签名验证和无需信任的支付系统。
 
-The xref:api:token/ERC20.adoc[full API] is also thoroughly documented, and serves as a great reference when developing your smart contract application. You can also ask for help or follow Contracts' development in the https://forum.openzeppelin.com[community forum].
+xref:api:token/ERC20.adoc[完整的 API] 也经过了详尽的文档记录，并且在你开发智能合约应用程序时可以作为一个很好的参考。你也可以在 https://forum.openzeppelin.com[社区论坛] 中寻求帮助或关注 Contracts 的开发。
 
-The following articles provide great background reading, though please note, some of the referenced tools have changed as the tooling in the ecosystem continues to rapidly evolve.
+以下文章提供了很好的背景阅读资料，但请注意，由于生态系统中的工具在不断快速发展，一些参考工具已经发生了变化。
 
-* https://blog.openzeppelin.com/the-hitchhikers-guide-to-smart-contracts-in-ethereum-848f08001f05[The Hitchhiker’s Guide to Smart Contracts in Ethereum] will help you get an overview of the various tools available for smart contract development, and help you set up your environment.
-* https://blog.openzeppelin.com/a-gentle-introduction-to-ethereum-programming-part-1-783cc7796094[A Gentle Introduction to Ethereum Programming, Part 1] provides very useful information on an introductory level, including many basic concepts from the Ethereum platform.
-* For a more in-depth dive, you may read the guide https://blog.openzeppelin.com/designing-the-architecture-for-your-ethereum-application-9cec086f8317[Designing the architecture for your Ethereum application], which discusses how to better structure your application and its relationship to the real world.
+* https://blog.openzeppelin.com/the-hitchhikers-guide-to-smart-contracts-in-ethereum-848f08001f05[以太坊智能合约的 Hitchhiker 指南] 将帮助你了解智能合约开发的各种可用工具，并帮助你设置你的环境。
+* https://blog.openzeppelin.com/a-gentle-introduction-to-ethereum-programming-part-1-783cc7796094[以太坊编程入门，第 1 部分] 提供了入门级别非常有用的信息，包括以太坊平台的许多基本概念。
+* 想要更深入地了解，你可以阅读指南 https://blog.openzeppelin.com/designing-the-architecture-for-your-ethereum-application-9cec086f8317[为你的以太坊应用设计架构]，它讨论了如何更好地构造你的应用程序及其与现实世界的关系。

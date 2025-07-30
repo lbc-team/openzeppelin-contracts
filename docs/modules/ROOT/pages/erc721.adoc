@@ -1,25 +1,25 @@
 = ERC-721
 
-We've discussed how you can make a _fungible_ token using xref:erc20.adoc[ERC-20], but what if not all tokens are alike? This comes up in situations like *real estate*, *voting rights*, or *collectibles*, where some items are valued more than others, due to their usefulness, rarity, etc. ERC-721 is a standard for representing ownership of xref:tokens.adoc#different-kinds-of-tokens[_non-fungible_ tokens], that is, where each token is unique.
+我们已经讨论了如何使用 xref:erc20.adoc[ERC-20] 创建一个 _同质化_ token，但是如果不是所有的 token 都一样怎么办？ 这在 *房地产*、*投票权* 或 *收藏品* 等情况下会出现，由于它们的用途，稀有性等原因，某些物品比其他物品更有价值。ERC-721 是表示 xref:tokens.adoc#different-kinds-of-tokens[_非同质化_ token] 所有权的标准，也就是说，每个 token 都是唯一的。
 
-ERC-721 is a more complex standard than ERC-20, with multiple optional extensions, and is split across a number of contracts. The OpenZeppelin Contracts provide flexibility regarding how these are combined, along with custom useful extensions. Check out the xref:api:token/ERC721.adoc[API Reference] to learn more about these.
+ERC-721 是一个比 ERC-20 更复杂的标准，具有多个可选扩展，并且分布在多个合约中。 OpenZeppelin Contracts 提供了关于如何组合这些合约的灵活性，以及自定义的有用扩展。 查看 xref:api:token/ERC721.adoc[API 参考] 以了解更多关于这些的信息。
 
-== Constructing an ERC-721 Token Contract
+== 构建 ERC-721 Token 合约
 
-We'll use ERC-721 to track items in our game, which will each have their own unique attributes. Whenever one is to be awarded to a player, it will be minted and sent to them. Players are free to keep their token or trade it with other people as they see fit, as they would any other asset on the blockchain!  Please note any account can call `awardItem` to mint items.  To restrict what accounts can mint items we can add xref:access-control.adoc[Access Control].
+我们将使用 ERC-721 追踪我们游戏中的物品，每个物品都有自己独特的属性。 每当要奖励给玩家物品时，它将被铸造并发送给他们。 玩家可以自由地保留他们的 token，或者像在区块链上交易任何其他资产一样，与其他玩家进行交易！ 请注意，任何帐户都可以调用 `awardItem` 来铸造物品。 为了限制哪些帐户可以铸造物品，我们可以添加 xref:access-control.adoc[访问控制]。
 
-Here's what a contract for tokenized items might look like:
+以下是 token 化物品的合约可能的样子：
 
 [source,solidity]
 ----
 include::api:example$token/ERC721/GameItem.sol[]
 ----
 
-The xref:api:token/ERC721.adoc#ERC721URIStorage[`ERC721URIStorage`] contract is an implementation of ERC-721 that includes the metadata standard extensions (xref:api:token/ERC721.adoc#IERC721Metadata[`IERC721Metadata`]) as well as a mechanism for per-token metadata. That's where the xref:api:token/ERC721.adoc#ERC721-_setTokenURI-uint256-string-[`_setTokenURI`] method comes from: we use it to store an item's metadata.
+xref:api:token/ERC721.adoc#ERC721URIStorage[`ERC721URIStorage`] 合约是 ERC-721 的一个实现，它包括元数据标准扩展 (xref:api:token/ERC721.adoc#IERC721Metadata[`IERC721Metadata`]) 以及每个 token 元数据的机制。 这就是 xref:api:token/ERC721.adoc#ERC721-_setTokenURI-uint256-string-[`_setTokenURI`] 方法的来源：我们使用它来存储物品的元数据。
 
-Also note that, unlike ERC-20, ERC-721 lacks a `decimals` field, since each token is distinct and cannot be partitioned.
+另请注意，与 ERC-20 不同，ERC-721 缺少 `decimals` 字段，因为每个 token 都是不同的且无法分割。
 
-New items can be created:
+可以创建新物品：
 
 [source,javascript]
 ----
@@ -29,7 +29,7 @@ Events emitted:
  - Transfer(0x0000000000000000000000000000000000000000, playerAddress, 7)
 ----
 
-And the owner and metadata of each item queried:
+并且可以查询每个物品的所有者和元数据：
 
 [source,javascript]
 ----
@@ -39,7 +39,7 @@ playerAddress
 "https://game.example/item-id-8u5h2m.json"
 ----
 
-This `tokenURI` should resolve to a JSON document that might look something like:
+这个 `tokenURI` 应该解析为一个 JSON 文档，它可能看起来像这样：
 
 [source,json]
 ----
@@ -51,8 +51,8 @@ This `tokenURI` should resolve to a JSON document that might look something like
 }
 ----
 
-For more information about the `tokenURI` metadata JSON Schema, check out the https://eips.ethereum.org/EIPS/eip-721[ERC-721 specification].
+有关 `tokenURI` 元数据 JSON Schema 的更多信息，请查看 https://eips.ethereum.org/EIPS/eip-721[ERC-721 规范]。
 
-NOTE: You'll notice that the item's information is included in the metadata, but that information isn't on-chain! So a game developer could change the underlying metadata, changing the rules of the game! 
+NOTE: 您会注意到物品的信息包含在元数据中，但该信息不在链上！ 因此，游戏开发者可以更改底层元数据，从而更改游戏的规则！
 
-TIP: If you'd like to put all item information on-chain, you can extend ERC-721 to do so (though it will be rather costly) by providing a xref:utilities.adoc#base64[`Base64`] Data URI with the JSON schema encoded. You could also leverage IPFS to store the tokenURI information, but these techniques are out of the scope of this overview guide.
+TIP: 如果你想把所有的物品信息都放在链上，你可以扩展 ERC-721 来做到这一点（尽管这将非常昂贵），通过提供一个带有编码的 JSON schema 的 xref:utilities.adoc#base64[`Base64`] Data URI。 您还可以利用 IPFS 来存储 tokenURI 信息，但这些技术超出了本概述指南的范围。

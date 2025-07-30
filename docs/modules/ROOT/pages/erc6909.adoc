@@ -1,42 +1,42 @@
-= ERC-6909
+:page-title: ERC-6909
 
-ERC-6909 is a draft EIP that draws on ERC-1155 learnings since it was published in 2018. The main goals of ERC-6909 is to decrease gas costs and complexity--this is mainly accomplished by removing batching and callbacks.
+ERC-6909 是一个 EIP 草案，它借鉴了自 2018 年发布以来 ERC-1155 的经验。ERC-6909 的主要目标是降低 Gas 成本和复杂度——这主要通过移除批量处理和回调来实现。
 
-TIP: To understand the inspiration for a multi token standard, see the xref:erc1155.adoc#multi-token-standard[multi token standard] section within the EIP-1155 docs.
+提示：要了解多代币标准的灵感来源，请参阅 xref:erc1155.adoc#multi-token-standard[多代币标准] 部分在 EIP-1155 文档中。
 
-== Changes from ERC-1155
+== 从 ERC-1155 的更改
 
-There are three main changes from ERC-1155 which are as follows:
+从 ERC-1155 主要有三个变化，如下所示：
 
-. The removal of batch operations.
-. The removal of transfer callbacks.
-. Granularization in approvals--approvals can be set globally (as operators) or as amounts per token (inspired by ERC20).
+. 移除批量操作。
+. 移除转账回调。
+. 更细粒度的授权--授权可以全局设置（作为操作员），也可以按代币设置数量（受 ERC20 启发）。
 
-== Constructing an ERC-6909 Token Contract
+== 构建一个 ERC-6909 代币合约
 
-We'll use ERC-6909 to track multiple items in a game, each having their own unique attributes. All item types will by minted to the deployer of the contract, which we can later transfer to players. We'll also use the xref:api:token/ERC6909.adoc#ERC6909Metadata[`ERC6909Metadata`] extension to add decimals to our fungible items (the vanilla ERC-6909 implementation does not have decimals).
+我们将使用 ERC-6909 来跟踪游戏中的多个物品，每个物品都有其独特的属性。所有的物品类型都将被铸造到合约的部署者，之后我们可以将其转移给玩家。我们还会使用 xref:api:token/ERC6909.adoc#ERC6909Metadata[`ERC6909Metadata`] 扩展来为我们的同质化物品添加小数位（原生的 ERC-6909 实现没有小数位）。
 
-For simplicity, we will mint all items in the constructor--however, minting functionality could be added to the contract to mint on demand to players.
+为了简单起见，我们将在构造函数中铸造所有物品——但是，可以将铸造功能添加到合约中，以便按需铸造给玩家。
 
-TIP: For an overview of minting mechanisms, check out xref:erc20-supply.adoc[Creating ERC-20 Supply].
+提示：有关铸造机制的概述，请查看 xref:erc20-supply.adoc[创建 ERC-20 供应量]。
 
-Here's what a contract for tokenized items might look like:
+以下是代币化物品的合约可能的样子：
 
 [source,solidity]
 ----
 include::api:example$token/ERC6909/ERC6909GameItems.sol[]
 ----
 
-Note that there is no content URI functionality in the base implementation, but the xref:api:token/ERC6909.adoc#ERC6909ContentURI[`ERC6909ContentURI`] extension adds it. Additionally, the base implementation does not track total supplies, but the xref:api:token/ERC6909.adoc#ERC6909TokenSupply[`ERC6909TokenSupply`] extension tracks the total supply of each token id.
+请注意，基本实现中没有内容 URI 功能，但 xref:api:token/ERC6909.adoc#ERC6909ContentURI[`ERC6909ContentURI`] 扩展添加了它。此外，基本实现不跟踪总供应量，但 xref:api:token/ERC6909.adoc#ERC6909TokenSupply[`ERC6909TokenSupply`] 扩展跟踪每个代币 id 的总供应量。
 
-Once the contract is deployed, we will be able to query the deployer’s balance:
+合约部署后，我们将能够查询部署者的余额：
 [source,javascript]
 ----
 > gameItems.balanceOf(deployerAddress, 3)
 1000000000
 ----
 
-We can transfer items to player accounts:
+我们可以将物品转移到玩家账户：
 [source,javascript]
 ----
 > gameItems.transfer(playerAddress, 2, 1)

@@ -1,98 +1,97 @@
-= Access Control
+= 访问控制
 
-Access control—that is, "who is allowed to do this thing"—is incredibly important in the world of smart contracts. The access control of your contract may govern who can mint tokens, vote on proposals, freeze transfers, and many other things. It is therefore *critical* to understand how you implement it, lest someone else https://blog.openzeppelin.com/on-the-parity-wallet-multisig-hack-405a8c12e8f7[steals your whole system].
+访问控制——即“谁有权做这件事”——在智能合约领域非常重要。合约的访问控制可能决定谁可以铸造代币、对提案进行投票、冻结转账以及许多其他事情。因此，*至关重要*的是了解如何实施它，否则其他人可能会 https://blog.openzeppelin.com/on-the-parity-wallet-multisig-hack-405a8c12e8f7[窃取你的整个系统]。
 
 [[ownership-and-ownable]]
-== Ownership and `Ownable`
+== 所有权和 `Ownable`
 
-The most common and basic form of access control is the concept of _ownership_: there's an account that is the `owner` of a contract and can do administrative tasks on it. This approach is perfectly reasonable for contracts that have a single administrative user.
+最常见和最基本的访问控制形式是_所有权_的概念：存在一个帐户是合约的 `owner`，并且可以在其上执行管理任务。对于具有单个管理用户的合约，此方法是完全合理的。
 
-OpenZeppelin Contracts provides xref:api:access.adoc#Ownable[`Ownable`] for implementing ownership in your contracts.
+OpenZeppelin Contracts 提供了 xref:api:access.adoc#Ownable[`Ownable`] 用于在你的合约中实现所有权。
 
 ```solidity
 include::api:example$access-control/MyContractOwnable.sol[]
 ```
 
-At deployment, the xref:api:access.adoc#Ownable-owner--[`owner`] of an `Ownable` contract is set to the provided `initialOwner` parameter.
+在部署时，`Ownable` 合约的 xref:api:access.adoc#Ownable-owner--[`owner`] 被设置为提供的 `initialOwner` 参数。
 
-Ownable also lets you:
+Ownable 还允许你：
 
-* xref:api:access.adoc#Ownable-transferOwnership-address-[`transferOwnership`] from the owner account to a new one, and
-* xref:api:access.adoc#Ownable-renounceOwnership--[`renounceOwnership`] for the owner to relinquish this administrative privilege, a common pattern after an initial stage with centralized administration is over.
+* 将 xref:api:access.adoc#Ownable-transferOwnership-address-[`transferOwnership`] 从所有者帐户转移到新帐户，以及
+* xref:api:access.adoc#Ownable-renounceOwnership--[`renounceOwnership`] 用于所有者放弃此管理权限，这在以中心化管理为特征的初始阶段结束后是一种常见模式。
 
-WARNING: Removing the owner altogether will mean that administrative tasks that are protected by `onlyOwner` will no longer be callable!
+WARNING: 完全移除所有者将意味着受 `onlyOwner` 保护的管理任务将不再可调用！
 
-Ownable is a simple and effective way to implement access control, but you should be mindful of the dangers associated with transferring the ownership to an incorrect account that can't interact with this contract anymore. An alternative to this problem is using xref:api:access.adoc#Ownable2Step[`Ownable2Step`]; a variant of Ownable that requires the new owner to explicitly accept the ownership transfer by calling xref:api:access.adoc#Ownable2Step-acceptOwnership--[`acceptOwnership`].
+Ownable 是一种简单有效的访问控制实现方式，但你应该注意将所有权转移到无法再与此合约交互的错误帐户所相关的危险。此问题的一种替代方法是使用 xref:api:access.adoc#Ownable2Step[`Ownable2Step`]; Ownable 的一个变体，它要求新所有者通过调用 xref:api:access.adoc#Ownable2Step-acceptOwnership--[`acceptOwnership`] 显式接受所有权转移。
 
-Note that *a contract can also be the owner of another one*! This opens the door to using, for example, a https://safe.global[Gnosis Safe], an https://aragon.org[Aragon DAO], or a totally custom contract that _you_ create.
+请注意，*合约也可以是另一个合约的所有者*！这为使用例如 https://safe.global[Gnosis Safe]、https://aragon.org[Aragon DAO] 或 _你_ 创建的完全自定义的合约打开了大门。
 
-In this way, you can use _composability_ to add additional layers of access control complexity to your contracts. Instead of having a single regular Ethereum account (Externally Owned Account, or EOA) as the owner, you could use a 2-of-3 multisig run by your project leads, for example. Prominent projects in the space, such as https://makerdao.com[MakerDAO], use systems similar to this one.
+通过这种方式，你可以使用_可组合性_为你的合约添加额外的访问控制复杂性层。例如，你可以使用由你的项目负责人运行的 2-of-3 多重签名，而不是将单个常规 Ethereum 帐户（外部拥有的帐户或 EOA）作为所有者。该领域的知名项目，例如 https://makerdao.com[MakerDAO]，使用与此类似的系统。
 
 [[role-based-access-control]]
-== Role-Based Access Control
+== 基于角色的访问控制
 
-While the simplicity of _ownership_ can be useful for simple systems or quick prototyping, different levels of authorization are often needed. You may want for an account to have permission to ban users from a system, but not create new tokens. https://en.wikipedia.org/wiki/Role-based_access_control[_Role-Based Access Control (RBAC)_] offers flexibility in this regard.
+虽然_所有权_的简单性对于简单的系统或快速原型设计很有用，但通常需要不同级别的授权。你可能希望某个帐户有权禁止用户访问系统，但不能创建新代币。 https://en.wikipedia.org/wiki/Role-based_access_control[基于角色的访问控制（RBAC）]在这方面提供了灵活性。
 
-In essence, we will be defining multiple _roles_, each allowed to perform different sets of actions. An account may have, for example, 'moderator', 'minter' or 'admin' roles, which you will then check for instead of simply using `onlyOwner`. This check can be enforced through the `onlyRole` modifier. Separately, you will be able to define rules for how accounts can be granted a role, have it revoked, and more.
+本质上，我们将定义多个_角色_，每个角色都允许执行不同的操作集。一个帐户可能具有例如“moderator”、“minter”或“admin”角色，然后你将检查这些角色，而不是简单地使用 `onlyOwner`。可以通过 `onlyRole` 修饰符强制执行此检查。另外，你将能够定义帐户如何被授予角色、如何被撤销角色以及更多规则。
 
-Most software uses access control systems that are role-based: some users are regular users, some may be supervisors or managers, and a few will often have administrative privileges.
+大多数软件使用基于角色的访问控制系统：一些用户是普通用户，一些可能是主管或经理，而少数人通常拥有管理权限。
 
 [[using-access-control]]
-=== Using `AccessControl`
+=== 使用 `AccessControl`
 
-OpenZeppelin Contracts provides xref:api:access.adoc#AccessControl[`AccessControl`] for implementing role-based access control. Its usage is straightforward: for each role that you want to define,
-you will create a new _role identifier_ that is used to grant, revoke, and check if an account has that role.
+OpenZeppelin Contracts 提供了 xref:api:access.adoc#AccessControl[`AccessControl`] 用于实现基于角色的访问控制。它的用法很简单：对于你要定义的每个角色，你将创建一个新的_角色标识符_，用于授予、撤销和检查帐户是否具有该角色。
 
-Here's a simple example of using `AccessControl` in an xref:erc20.adoc[ERC-20 token] to define a 'minter' role, which allows accounts that have it create new tokens:
+这是一个在 xref:erc20.adoc[ERC-20 代币]中使用 `AccessControl` 的简单示例，用于定义“minter”角色，该角色允许具有该角色的帐户创建新代币：
 
 [source,solidity]
 ----
 include::api:example$access-control/AccessControlERC20MintBase.sol[]
 ----
 
-NOTE: Make sure you fully understand how xref:api:access.adoc#AccessControl[`AccessControl`] works before using it on your system, or copy-pasting the examples from this guide.
+NOTE: 在你的系统中使用 xref:api:access.adoc#AccessControl[`AccessControl`] 或复制粘贴本指南中的示例之前，请确保你完全理解它的工作原理。
 
-While clear and explicit, this isn't anything we wouldn't have been able to achieve with `Ownable`. Indeed, where `AccessControl` shines is in scenarios where granular permissions are required, which can be implemented by defining _multiple_ roles.
+虽然清晰且明确，但这并不是我们无法使用 `Ownable` 实现的。实际上，`AccessControl` 的优势在于需要细粒度权限的场景，这可以通过定义_多个_角色来实现。
 
-Let's augment our ERC-20 token example by also defining a 'burner' role, which lets accounts destroy tokens, and by using the `onlyRole` modifier:
+让我们通过定义一个“burner”角色来增强我们的 ERC-20 代币示例，该角色允许帐户销毁代币，并使用 `onlyRole` 修饰符：
 
 [source,solidity]
 ----
 include::api:example$access-control/AccessControlERC20MintOnlyRole.sol[]
 ----
 
-So clean! By splitting concerns this way, more granular levels of permission may be implemented than were possible with the simpler _ownership_ approach to access control. Limiting what each component of a system is able to do is known as the https://en.wikipedia.org/wiki/Principle_of_least_privilege[principle of least privilege], and is a good security practice. Note that each account may still have more than one role, if so desired.
+太简洁了！通过以这种方式分离关注点，可以实现比使用更简单的_所有权_访问控制方法更精细的权限级别。限制系统的每个组件能够做什么被称为 https://en.wikipedia.org/wiki/Principle_of_least_privilege[最小权限原则]，这是一种良好的安全措施。请注意，如果需要，每个帐户仍然可以拥有多个角色。
 
 [[granting-and-revoking]]
-=== Granting and Revoking Roles
+=== 授予和撤销角色
 
-The ERC-20 token example above uses `_grantRole`, an `internal` function that is useful when programmatically assigning roles (such as during construction). But what if we later want to grant the 'minter' role to additional accounts?
+上面的 ERC-20 代币示例使用 `_grantRole`，这是一个 `internal` 函数，在以编程方式分配角色（例如在构造期间）时很有用。但是，如果我们稍后想要将“minter”角色授予其他帐户怎么办？
 
-By default, **accounts with a role cannot grant it or revoke it from other accounts**: all having a role does is making the `hasRole` check pass. To grant and revoke roles dynamically, you will need help from the _role's admin_.
+默认情况下，**具有角色的帐户无法授予或撤销其他帐户的角色**：具有角色所做的只是使 `hasRole` 检查通过。要动态地授予和撤销角色，你需要_角色的管理员_的帮助。
 
-Every role has an associated admin role, which grants permission to call the `grantRole` and `revokeRole` functions. A role can be granted or revoked by using these if the calling account has the corresponding admin role. Multiple roles may have the same admin role to make management easier. A role's admin can even be the same role itself, which would cause accounts with that role to be able to also grant and revoke it.
+每个角色都有一个关联的管理角色，该角色授予调用 `grantRole` 和 `revokeRole` 函数的权限。如果调用帐户具有相应的管理角色，则可以使用这些函数授予或撤销角色。多个角色可以具有相同的管理角色，以简化管理。角色的管理员甚至可以是角色本身，这将导致具有该角色的帐户也能够授予和撤销该角色。
 
-This mechanism can be used to create complex permissioning structures resembling organizational charts, but it also provides an easy way to manage simpler applications. `AccessControl` includes a special role, called `DEFAULT_ADMIN_ROLE`, which acts as the **default admin role for all roles**. An account with this role will be able to manage any other role, unless `_setRoleAdmin` is used to select a new admin role.
+此机制可用于创建类似于组织结构图的复杂权限结构，但它也提供了一种管理更简单应用程序的简便方法。`AccessControl` 包括一个特殊角色，称为 `DEFAULT_ADMIN_ROLE`，它充当**所有角色的默认管理角色**。除非使用 `_setRoleAdmin` 选择新的管理角色，否则具有此角色的帐户将能够管理任何其他角色。
 
-Since it is the admin for all roles by default, and in fact it is also its own admin, this role carries significant risk. To mitigate this risk we provide xref:api:access.adoc#AccessControlDefaultAdminRules[`AccessControlDefaultAdminRules`], a recommended extension of `AccessControl` that adds a number of enforced security measures for this role: the admin is restricted to a single account, with a 2-step transfer procedure with a delay in between steps.
+由于默认情况下它是所有角色的管理员，并且实际上它也是它自己的管理员，因此此角色具有重大风险。为了减轻这种风险，我们提供了 xref:api:access.adoc#AccessControlDefaultAdminRules[`AccessControlDefaultAdminRules`]，它是 `AccessControl` 的推荐扩展，它为此角色添加了许多强制执行的安全措施：管理员仅限于单个帐户，具有一个包含两个步骤的转移程序，且步骤之间存在延迟。
 
-Let's take a look at the ERC-20 token example, this time taking advantage of the default admin role:
+让我们看一下 ERC-20 代币示例，这次利用默认的管理角色：
 
 [source,solidity]
 ----
 include::api:example$access-control/AccessControlERC20MintMissing.sol[]
 ----
 
-Note that, unlike the previous examples, no accounts are granted the 'minter' or 'burner' roles. However, because those roles' admin role is the default admin role, and _that_ role was granted to `msg.sender`, that same account can call `grantRole` to give minting or burning permission, and `revokeRole` to remove it.
+请注意，与之前的示例不同，没有帐户被授予“minter”或“burner”角色。但是，由于这些角色的管理角色是默认管理角色，并且_该_角色已授予 `msg.sender`，因此同一个帐户可以调用 `grantRole` 来授予铸造或销毁权限，并调用 `revokeRole` 来删除它。
 
-Dynamic role allocation is often a desirable property, for example in systems where trust in a participant may vary over time. It can also be used to support use cases such as https://en.wikipedia.org/wiki/Know_your_customer[KYC], where the list of role-bearers may not be known up-front, or may be prohibitively expensive to include in a single transaction.
+动态角色分配通常是一个理想的属性，例如在对参与者的信任可能随时间变化的系统中。它也可以用于支持 https://en.wikipedia.org/wiki/Know_your_customer[KYC] 等用例，其中角色承担者的列表可能不是预先知道的，或者包含在单个交易中可能成本过高。
 
 [[querying-privileged-accounts]]
-=== Querying Privileged Accounts
+=== 查询具有权限的帐户
 
-Because accounts might <<granting-and-revoking, grant and revoke roles>> dynamically, it is not always possible to determine which accounts hold a particular role. This is important as it allows proving certain properties about a system, such as that an administrative account is a multisig or a DAO, or that a certain role has been removed from all users, effectively disabling any associated functionality.
+由于帐户可能会 <<granting-and-revoking, 动态地授予和撤销角色>>，因此并不总是能够确定哪些帐户拥有特定角色。这很重要，因为它允许证明有关系统的某些属性，例如管理帐户是多重签名或 DAO，或者已从所有用户中删除某个角色，从而有效地禁用任何关联的功能。
 
-Under the hood, `AccessControl` uses `EnumerableSet`, a more powerful variant of Solidity's `mapping` type, which allows for key enumeration. `getRoleMemberCount` can be used to retrieve the number of accounts that have a particular role, and `getRoleMember` can then be called to get the address of each of these accounts.
+在底层，`AccessControl` 使用 `EnumerableSet`，它是 Solidity 的 `mapping` 类型的更强大的变体，允许进行键枚举。`getRoleMemberCount` 可用于检索具有特定角色的帐户数，然后可以调用 `getRoleMember` 来获取每个这些帐户的地址。
 
 ```javascript
 const minterCount = await myToken.getRoleMemberCount(MINTER_ROLE);
@@ -103,77 +102,77 @@ for (let i = 0; i < minterCount; ++i) {
 }
 ```
 
-== Delayed operation
+== 延迟操作
 
-Access control is essential to prevent unauthorized access to critical functions. These functions may be used to mint tokens, freeze transfers or perform an upgrade that completely changes the smart contract logic. While xref:api:access.adoc#Ownable[`Ownable`] and xref:api:access.adoc#AccessControl[`AccessControl`] can prevent unauthorized access, they do not address the issue of a misbehaving administrator attacking their own system to the prejudice of their users.
+访问控制对于防止未经授权访问关键功能至关重要。这些功能可用于铸造代币、冻结转移或执行完全更改智能合约逻辑的升级。虽然 xref:api:access.adoc#Ownable[`Ownable`] 和 xref:api:access.adoc#AccessControl[`AccessControl`] 可以防止未经授权的访问，但它们无法解决行为不端的管理员攻击自己的系统以损害其用户的问题。
 
-This is the issue the xref:api:governance.adoc#TimelockController[`TimelockController`] is addressing.
+这是 xref:api:governance.adoc#TimelockController[`TimelockController`] 正在解决的问题。
 
-The xref:api:governance.adoc#TimelockController[`TimelockController`] is a proxy that is governed by proposers and executors. When set as the owner/admin/controller of a smart contract, it ensures that whichever maintenance operation is ordered by the proposers is subject to a delay. This delay protects the users of the smart contract by giving them time to review the maintenance operation and exit the system if they consider it is in their best interest to do so.
+xref:api:governance.adoc#TimelockController[`TimelockController`] 是一个由提议者和执行者管理的代理。当设置为智能合约的所有者/管理员/控制器时，它确保提议者订购的任何维护操作都受到延迟。此延迟通过给用户时间来审查维护操作并在认为符合自身利益时退出系统来保护智能合约的用户。
 
-=== Using `TimelockController`
+=== 使用 `TimelockController`
 
-By default, the address that deployed the xref:api:governance.adoc#TimelockController[`TimelockController`] gets administration privileges over the timelock. This role grants the right to assign proposers, executors, and other administrators.
+默认情况下，部署 xref:api:governance.adoc#TimelockController[`TimelockController`] 的地址获得对时间锁的管理权限。此角色授予分配提议者、执行者和其他管理员的权利。
 
-The first step in configuring the xref:api:governance.adoc#TimelockController[`TimelockController`] is to assign at least one proposer and one executor. These can be assigned during construction or later by anyone with the administrator role. These roles are not exclusive, meaning an account can have both roles.
+配置 xref:api:governance.adoc#TimelockController[`TimelockController`] 的第一步是至少分配一个提议者和一个执行者。这些可以在构造期间分配，也可以稍后由任何具有管理员角色的人分配。这些角色不是排他的，这意味着一个帐户可以同时拥有这两个角色。
 
-Roles are managed using the xref:api:access.adoc#AccessControl[`AccessControl`] interface and the `bytes32` values for each role are accessible through the `ADMIN_ROLE`, `PROPOSER_ROLE` and `EXECUTOR_ROLE` constants.
+角色使用 xref:api:access.adoc#AccessControl[`AccessControl`] 接口进行管理，每个角色的 `bytes32` 值可以通过 `ADMIN_ROLE`、`PROPOSER_ROLE` 和 `EXECUTOR_ROLE` 常量访问。
 
-There is an additional feature built on top of `AccessControl`: giving the executor role to `address(0)` opens access to anyone to execute a proposal once the timelock has expired. This feature, while useful, should be used with caution.
+在 `AccessControl` 之上构建了一个附加功能：将执行者角色授予 `address(0)` 可让任何人一旦时间锁过期就可以执行提案。此功能虽然有用，但应谨慎使用。
 
-At this point, with both a proposer and an executor assigned, the timelock can perform operations.
+此时，分配了提议者和执行者，时间锁可以执行操作。
 
-An optional next step is for the deployer to renounce its administrative privileges and leave the timelock self-administered. If the deployer decides to do so, all further maintenance, including assigning new proposers/schedulers or changing the timelock duration will have to follow the timelock workflow. This links the governance of the timelock to the governance of contracts attached to the timelock, and enforce a delay on timelock maintenance operations.
+可选的下一步是部署者放弃其管理权限，并让时间锁进行自我管理。如果部署者决定这样做，则所有进一步的维护，包括分配新的提议者/调度者或更改时间锁的持续时间，都必须遵循时间锁工作流程。这会将时间锁的管理与附加到时间锁的合约的管理联系起来，并强制对时间锁维护操作进行延迟。
 
-WARNING: If the deployer renounces administrative rights in favour of timelock itself, assigning new proposers or executors will require a timelocked operation. This means that if the accounts in charge of any of these two roles become unavailable, then the entire contract (and any contract it controls) becomes locked indefinitely.
+WARNING: 如果部署者放弃管理权利以支持时间锁本身，则分配新的提议者或执行者将需要时间锁定操作。这意味着，如果负责这两个角色中的任何一个的帐户变得不可用，则整个合约（以及它控制的任何合约）将无限期地锁定。
 
-With both the proposer and executor roles assigned and the timelock in charge of its own administration, you can now transfer the ownership/control of any contract to the timelock.
+分配了提议者和执行者角色，并且时间锁负责其自身的管理，你现在可以将任何合约的所有权/控制权转移到时间锁。
 
-TIP: A recommended configuration is to grant both roles to a secure governance contract such as a DAO or a multisig, and to additionally grant the executor role to a few EOAs held by people in charge of helping with the maintenance operations. These wallets cannot take over control of the timelock but they can help smoothen the workflow.
+TIP: 推荐的配置是将这两个角色都授予安全的治理合约，例如 DAO 或多重签名，并另外将执行者角色授予由负责帮助进行维护操作的人员持有的几个 EOA。这些钱包无法接管时间锁的控制权，但它们可以帮助简化工作流程。
 
-=== Minimum delay
+=== 最小延迟
 
-Operations executed by the xref:api:governance.adoc#TimelockController[`TimelockController`] are not subject to a fixed delay but rather a minimum delay. Some major updates might call for a longer delay. For example, if a delay of just a few days might be sufficient for users to audit a minting operation, it makes sense to use a delay of a few weeks, or even a few months, when scheduling a smart contract upgrade.
+由 xref:api:governance.adoc#TimelockController[`TimelockController`] 执行的操作不受固定延迟的约束，而是受最小延迟的约束。一些重大更新可能需要更长的延迟。例如，如果几天的延迟可能足以让用户审核铸造操作，那么在安排智能合约升级时，使用几周甚至几个月的延迟是有意义的。
 
-The minimum delay (accessible through the xref:api:governance.adoc#TimelockController-getMinDelay--[`getMinDelay`] method) can be updated by calling the xref:api:governance.adoc#TimelockController-updateDelay-uint256-[`updateDelay`] function. Bear in mind that access to this function is only accessible by the timelock itself, meaning this maintenance operation has to go through the timelock itself.
+最小延迟（可以通过 xref:api:governance.adoc#TimelockController-getMinDelay--[`getMinDelay`] 方法访问）可以通过调用 xref:api:governance.adoc#TimelockController-updateDelay-uint256-[`updateDelay`] 函数来更新。请记住，只有时间锁本身才能访问此函数，这意味着此维护操作必须通过时间锁本身。
 
 [[access-management]]
-== Access Management
+== 访问管理
 
-For a system of contracts, better integrated role management can be achieved with an xref:api:access.adoc#AccessManager[`AccessManager`] instance. Instead of managing each contract's permission separately, AccessManager stores all the permissions in a single contract, making your protocol easier to audit and maintain.
+对于合约系统，可以使用 xref:api:access.adoc#AccessManager[`AccessManager`] 实例来实现更好的集成角色管理。无需单独管理每个合约的权限，AccessManager 将所有权限存储在单个合约中，从而使你的协议更易于审计和维护。
 
-Although xref:api:access.adoc#AccessControl[`AccessControl`] offers a more dynamic solution for adding permissions to your contracts than Ownable, decentralized protocols tend to become more complex after integrating new contract instances and requires you to keep track of permissions separately in each contract. This increases the complexity of permissions management and monitoring across the system.
+尽管 xref:api:access.adoc#AccessControl[`AccessControl`] 比 Ownable 为你的合约添加权限提供了更动态的解决方案，但去中心化协议在集成新的合约实例后往往会变得更加复杂，并且需要你在每个合约中单独跟踪权限。这增加了整个系统中权限管理和监控的复杂性。
 
-image::access-control-multiple.svg[Access Control multiple]
+image::access-control-multiple.svg[访问控制多重]
 
-Protocols managing permissions in production systems often require more integrated alternatives to fragmented permissions through multiple `AccessControl` instances.
+在生产系统中管理权限的协议通常需要更集成的替代方案，以替代通过多个 `AccessControl` 实例进行的零散权限。
 
 image::access-manager.svg[AccessManager]
 
-The AccessManager is designed around the concept of role and target functions:
+AccessManager 围绕角色和目标函数的概念设计：
 
-* Roles are granted to accounts (addresses) following a many-to-many approach for flexibility. This means that each user can have one or multiple roles and multiple users can have the same role.
-* Access to a restricted target function is limited to one role. A target function is defined by one https://docs.soliditylang.org/en/v0.8.20/abi-spec.html#function-selector[function selector] on one contract (called target). 
+* 角色被授予帐户（地址），采用多对多的方法以实现灵活性。这意味着每个用户可以具有一个或多个角色，并且多个用户可以具有相同的角色。
+* 对受限目标函数的访问权限仅限于一个角色。目标函数由一个合约（称为目标）上的一个 https://docs.soliditylang.org/en/v0.8.20/abi-spec.html#function-selector[函数选择器]定义。
 
-For a call to be authorized, the caller must bear the role that is assigned to the current target function (contract address + function selector).
+为了授权调用，调用者必须承担分配给当前目标函数（合约地址 + 函数选择器）的角色。
 
-image::access-manager-functions.svg[AccessManager functions]
+image::access-manager-functions.svg[AccessManager 函数]
 
-=== Using `AccessManager`
+=== 使用 `AccessManager`
 
-OpenZeppelin Contracts provides xref:api:access.adoc#AccessManager[`AccessManager`] for managing roles across any number of contracts. The `AccessManager` itself is a contract that can be deployed and used out of the box. It sets an initial admin in the constructor who will be allowed to perform management operations.
+OpenZeppelin Contracts 提供了 xref:api:access.adoc#AccessManager[`AccessManager`] 用于管理任何数量的合约中的角色。`AccessManager` 本身是一个可以部署和开箱即用的合约。它在构造函数中设置一个初始管理员，该管理员将被允许执行管理操作。
 
-In order to restrict access to some functions of your contract, you should inherit from the xref:api:access.adoc#AccessManaged[`AccessManaged`] contract provided along with the manager. This provides the `restricted` modifier that can be used to protect any externally facing function. Note that you will have to specify the address of the AccessManager instance (xref:api:access.adoc#AccessManaged-constructor-address-[`initialAuthority`]) in the constructor so the `restricted` modifier knows which manager to use for checking permissions.
+为了限制对合约某些函数的访问，你应该从与管理器一起提供的 xref:api:access.adoc#AccessManaged[`AccessManaged`] 合约继承。这提供了 `restricted` 修饰符，可用于保护任何面向外部的函数。请注意，你必须在构造函数中指定 AccessManager 实例的地址（xref:api:access.adoc#AccessManaged-constructor-address-[`initialAuthority`]），以便 `restricted` 修饰符知道使用哪个管理器来检查权限。
 
-Here's a simple example of an xref:tokens.adoc#ERC20[ERC-20 token] that defines a `mint` function that is restricted by an xref:api:access.adoc#AccessManager[`AccessManager`]:
+这是一个 xref:tokens.adoc#ERC20[ERC-20 代币]的简单示例，它定义了一个受 xref:api:access.adoc#AccessManager[`AccessManager`] 限制的 `mint` 函数：
 
 ```solidity
 include::api:example$access-control/AccessManagedERC20MintBase.sol[]
 ```
 
-NOTE: Make sure you fully understand how xref:api:access.adoc#AccessManager[`AccessManager`] works before using it or copy-pasting the examples from this guide.
+NOTE: 在使用 xref:api:access.adoc#AccessManager[`AccessManager`] 或复制粘贴本指南中的示例之前，请确保你完全理解它的工作原理。
 
-Once the managed contract has been deployed, it is now under the manager's control. The initial admin can then assign the minter role to an address and also allow the role to call the `mint` function. For example, this is demonstrated in the following Javascript code using Ethers.js:
+一旦受管理合约被部署，它现在就在管理器的控制之下。然后，初始管理员可以将 minter 角色分配给地址，并允许该角色调用 `mint` 函数。例如，以下 JavaScript 代码使用 Ethers.js 演示了这一点：
 
 ```javascript
 // const target = ...;
@@ -192,9 +191,9 @@ await manager.setTargetFunctionRole(
 );
 ```
 
-Even though each role has its own list of function permissions, each role member (`address`) has an execution delay that will dictate how long the account should wait to execute a function that requires its role. Delayed operations must have the xref:api:access.adoc#AccessManager-schedule-address-bytes-uint48-[`schedule`] function called on them first in the AccessManager before they can be executed, either by calling to the target function or using the AccessManager's xref:api:access.adoc#AccessManager-execute-address-bytes-[`execute`] function.
+即使每个角色都有其自己的函数权限列表，每个角色成员 (`address`) 都有一个执行延迟，该延迟将指示帐户应等待多长时间才能执行需要其角色的函数。延迟操作必须首先在 AccessManager 上调用 xref:api:access.adoc#AccessManager-schedule-address-bytes-uint48-[`schedule`] 函数，然后才能通过调用目标函数或使用 AccessManager 的 xref:api:access.adoc#AccessManager-execute-address-bytes-[`execute`] 函数来执行它们。
 
-Additionally, roles can have a granting delay that prevents adding members immediately. The AccessManager admins can set this grant delay as follows:
+此外，角色可以具有授予延迟，从而阻止立即添加成员。AccessManager 管理员可以设置此授予延迟，如下所示：
 
 ```javascript
 const HOUR = 60 * 60;
@@ -209,19 +208,19 @@ await manager.connect(initialAdmin).setGrantDelay(MINTER, GRANT_DELAY);
 await manager.connect(initialAdmin).grantRole(MINTER, ACCOUNT, EXECUTION_DELAY); 
 ```
 
-Note that roles do not define a name. As opposed to the xref:api:access.adoc#AccessControl[`AccessControl`] case, roles are identified as numeric values instead of being hardcoded in the contract as `bytes32` values. It is still possible to allow for tooling discovery (e.g. for role exploration) using role labeling with the xref:api:access.adoc#AccessManager-labelRole-uint64-string-[`labelRole`] function.
+请注意，角色不定义名称。与 xref:api:access.adoc#AccessControl[`AccessControl`] 情况相反，角色被标识为数字值，而不是在合约中硬编码为 `bytes32` 值。仍然可以使用 xref:api:access.adoc#AccessManager-labelRole-uint64-string-[`labelRole`] 函数使用角色标签来允许工具发现（例如，用于角色探索）。
 
 ```javascript
 await manager.labelRole(MINTER, "MINTER");
 ```
 
-Given the admins of the `AccessManaged` can modify all of its permissions, it's recommended to keep only a single admin address secured under a multisig or governance layer. To achieve this, it is possible for the initial admin to set up all the required permissions, targets, and functions, assign a new admin, and finally renounce its admin role.
+鉴于 `AccessManaged` 的管理员可以修改其所有权限，建议仅保留在多重签名或治理层下保护的单个管理员地址。为了实现这一点，初始管理员可以设置所有必需的权限、目标和函数，分配一个新的管理员，并最终放弃其管理员角色。
 
-For improved incident response coordination, the manager includes a mode where administrators can completely close a target contract. When closed, all calls to restricted target functions in a target contract will revert.
+为了改进事件响应协调，管理器包括一种模式，管理员可以完全关闭目标合约。关闭后，对目标合约中受限目标函数的所有调用都将恢复。
 
-Closing and opening contracts don't alter any of their settings, neither permissions nor delays. Particularly, the roles required for calling specific target functions are not modified.
+关闭和打开合约不会更改其任何设置，无论是权限还是延迟。特别是，调用特定目标函数所需的角色不会被修改。
 
-This mode is useful for incident response operations that require temporarily shutting down a contract in order to evaluate emergencies and reconfigure permissions.
+此模式对于需要暂时关闭合约以评估紧急情况和重新配置权限的事件响应操作很有用。
 
 ```javascript
 const target = await myToken.getAddress();
@@ -233,49 +232,49 @@ await manager.setTargetClosed(target, true);
 await manager.setTargetClosed(target, false);
 ```
 
-WARNING: Even if an `AccessManager` defines permissions for a target function, these won't be applied if the managed contract instance is not using the xref:api:access.adoc#AccessManaged-restricted--[`restricted`] modifier for that function, or if its manager is a different one.
+WARNING: 即使 `AccessManager` 定义了目标函数的权限，如果受管理合约实例没有对该函数使用 xref:api:access.adoc#AccessManaged-restricted--[`restricted`] 修饰符，或者其管理器是不同的管理器，这些权限也不会被应用。
 
-=== Role Admins and Guardians
+=== 角色管理员和守护者
 
-An important aspect of the AccessControl contract is that roles aren't granted nor revoked by role members. Instead, it relies on the concept of a role admin for granting and revoking.
+AccessControl 合约的一个重要方面是角色不是由角色成员授予或撤销的。相反，它依赖于角色管理员的概念来进行授予和撤销。
 
-In the case of the `AccessManager`, the same rule applies and only the role's admins are able to call xref:api:access.adoc#AccessManager-grantRole-uint64-address-uint32-[grant] and xref:api:access.adoc#AccessManager-revokeRole-uint64-address-[revoke] functions. Note that calling these functions will be subject to the execution delay that the executing role admin has.
+在 `AccessManager` 的情况下，相同的规则适用，只有角色的管理员才能调用 xref:api:access.adoc#AccessManager-grantRole-uint64-address-uint32-[grant] 和 xref:api:access.adoc#AccessManager-revokeRole-uint64-address-[revoke] 函数。请注意，调用这些函数将受到执行角色管理员拥有的执行延迟的约束。
 
-Additionally, the `AccessManager` stores a _guardian_ as an extra protection for each role. This guardian has the ability to cancel operations that have been scheduled by any role member with an execution delay. Consider that a role will have its initial admin and guardian default to the `ADMIN_ROLE` (`0`).
+此外，`AccessManager` 存储一个 _守护者_ 作为每个角色的额外保护。此守护者有能力取消已由任何具有执行延迟的角色成员安排的操作。考虑到角色的初始管理员和守护者将默认为 `ADMIN_ROLE` (`0`)。
 
-IMPORTANT: Be careful with the members of `ADMIN_ROLE`, since it acts as the default admin and guardian for every role. A misbehaved guardian can cancel operations at will, affecting the AccessManager's operation.
+IMPORTANT: 小心 `ADMIN_ROLE` 的成员，因为它充当每个角色的默认管理员和守护者。行为不端的守护者可以随意取消操作，从而影响 AccessManager 的操作。
 
-=== Manager configuration
+=== 管理器配置
 
-The `AccessManager` provides a built-in interface for configuring permission settings that can be accessed by its `ADMIN_ROLE` members.
+`AccessManager` 提供了一个内置接口，用于配置权限设置，其 `ADMIN_ROLE` 成员可以访问该接口。
 
-This configuration interface includes the following functions:
+此配置界面包括以下函数：
 
-* Add a label to a role using the xref:api:access.adoc#AccessManager-labelRole-uint64-string-[`labelRole`] function.
-* Assign the admin and guardian of a role with xref:api:access.adoc#AccessManager-setRoleAdmin-uint64-uint64-[`setRoleAdmin`] and xref:api:access.adoc#AccessManager-setRoleGuardian-uint64-uint64-[`setRoleGuardian`].
-* Set each role's grant delay via xref:api:access.adoc#AccessManager-setGrantDelay-uint64-uint32-[`setGrantDelay`].
+* 使用 xref:api:access.adoc#AccessManager-labelRole-uint64-string-[`labelRole`] 函数向角色添加标签。
+* 使用 xref:api:access.adoc#AccessManager-setRoleAdmin-uint64-uint64-[`setRoleAdmin`] 和 xref:api:access.adoc#AccessManager-setRoleGuardian-uint64-uint64-[`setRoleGuardian`] 分配角色的管理员和守护者。
+* 通过 xref:api:access.adoc#AccessManager-setGrantDelay-uint64-uint32-[`setGrantDelay`] 设置每个角色的授予延迟。
 
-As an admin, some actions will require a delay. Similar to each member's execution delay, some admin operations require waiting for execution and should follow the xref:api:access.adoc#AccessManager-schedule-address-bytes-uint48-[`schedule`] and xref:api:access.adoc#AccessManager-execute-address-bytes-[`execute`] workflow.
+作为管理员，某些操作需要延迟。与每个成员的执行延迟类似，某些管理员操作需要等待执行，并且应遵循 xref:api:access.adoc#AccessManager-schedule-address-bytes-uint48-[`schedule`] 和 xref:api:access.adoc#AccessManager-execute-address-bytes-[`execute`] 工作流程。
 
-More specifically, these delayed functions are those for configuring the settings of a specific target contract. The delay applied to these functions can be adjusted by the manager admins with xref:api:access.adoc#AccessManager-setTargetAdminDelay-address-uint32-[`setTargetAdminDelay`].
+更具体地说，这些延迟函数是用于配置特定目标合约的设置的函数。管理器管理员可以使用 xref:api:access.adoc#AccessManager-setTargetAdminDelay-address-uint32-[`setTargetAdminDelay`] 调整应用于这些函数的延迟。
 
-The delayed admin actions are:
+延迟的管理员操作是：
 
-* Updating an `AccessManaged` contract xref:api:access.adoc#AccessManaged-authority--[authority] using xref:api:access.adoc#AccessManager-updateAuthority-address-address-[`updateAuthority`].
-* Closing or opening a target via xref:api:access.adoc#AccessManager-setTargetClosed-address-bool-[`setTargetClosed`].
-* Changing permissions of whether a role can call a target function with xref:api:access.adoc#AccessManager-setTargetFunctionRole-address-bytes4---uint64-[`setTargetFunctionRole`].
+* 使用 xref:api:access.adoc#AccessManager-updateAuthority-address-address-[`updateAuthority`] 更新 `AccessManaged` 合约 xref:api:access.adoc#AccessManaged-authority--[authority]。
+* 通过 xref:api:access.adoc#AccessManager-setTargetClosed-address-bool-[`setTargetClosed`] 关闭或打开目标。
+* 使用 xref:api:access.adoc#AccessManager-setTargetFunctionRole-address-bytes4---uint64-[`setTargetFunctionRole`] 更改角色是否可以调用目标函数的权限。
 
-=== Using with Ownable
+=== 与 Ownable 一起使用
 
-Contracts already inheriting from xref:api:access.adoc#Ownable[`Ownable`] can migrate to AccessManager by transferring ownership to the manager. After that, all calls to functions with the `onlyOwner` modifier should be called through the manager's xref:api:access.adoc#AccessManager-execute-address-bytes-[`execute`] function, even if the caller doesn't require a delay.
+已经从 xref:api:access.adoc#Ownable[`Ownable`] 继承的合约可以通过将所有权转移给管理器来迁移到 AccessManager。之后，即使调用者不需要延迟，也应通过管理器的 xref:api:access.adoc#AccessManager-execute-address-bytes-[`execute`] 函数调用所有带有 `onlyOwner` 修饰符的函数。
 
 ```javascript
 await ownable.connect(owner).transferOwnership(accessManager);
 ```
 
-=== Using with AccessControl
+=== 与 AccessControl 一起使用
 
-For systems already using xref:api:access.adoc#AccessControl[`AccessControl`], the `DEFAULT_ADMIN_ROLE` can be granted to the `AccessManager` after revoking every other role. Subsequent calls should be made through the manager's xref:api:access.adoc#AccessManager-execute-address-bytes-[`execute`] method, similar to the Ownable case.
+对于已经使用 xref:api:access.adoc#AccessControl[`AccessControl`] 的系统，可以在撤销所有其他角色后将 `DEFAULT_ADMIN_ROLE` 授予 `AccessManager`。后续调用应通过管理器的 xref:api:access.adoc#AccessManager-execute-address-bytes-[`execute`] 方法进行，类似于 Ownable 情况。
 
 ```javascript
 // Revoke old roles

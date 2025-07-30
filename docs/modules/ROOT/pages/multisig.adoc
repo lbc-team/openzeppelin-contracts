@@ -1,31 +1,31 @@
-= Multisig Account
+= 多重签名账户
 
-A multi-signature (multisig) account is a smart account that requires multiple authorized signers to approve operations before execution. Unlike traditional accounts controlled by a single private key, multisigs distribute control among multiple parties, eliminating single points of failure. For example, a 2-of-3 multisig requires signatures from at least 2 out of 3 possible signers.
+多重签名（multisig）账户是一种智能账户，需要多个授权签名者批准操作才能执行。与由单个私钥控制的传统账户不同，多重签名将控制权分配给多个参与方，从而消除单点故障。例如，一个 2-of-3 多重签名需要来自 3 个可能的签名者中至少 2 个的签名。
 
-Popular implementations like https://safe.global/[Safe] (formerly Gnosis Safe) have become the standard for securing valuable assets. Multisigs provide enhanced security through collective authorization, customizable controls for ownership and thresholds, and the ability to rotate signers without changing the account address.
+像 https://safe.global/[Safe] (之前称为 Gnosis Safe) 这样的流行实现已经成为保护有价值资产的标准。多重签名通过集体授权、所有权和阈值的可定制控制以及在不更改账户地址的情况下轮换签名者的能力来提供增强的安全性。
 
-== Beyond Standard Signature Verification
+== 超越标准签名验证
 
-As discussed in the xref:accounts.adoc#signature_validation[accounts section], the standard approach for smart contracts to verify signatures is https://eips.ethereum.org/EIPS/eip-1271[ERC-1271], which defines an `isValidSignature(hash, signature)`. However, it is limited in two important ways:
+正如在 xref:accounts.adoc#signature_validation[账户部分] 中讨论的那样，智能合约验证签名的标准方法是 https://eips.ethereum.org/EIPS/eip-1271[ERC-1271]，它定义了一个 `isValidSignature(hash, signature)`。但是，它在两个重要方面受到限制：
 
-1. It assumes the signer has an EVM address
-2. It treats the signer as a single identity
+1. 它假设签名者具有 EVM 地址
+2. 它将签名者视为一个单一身份
 
-This becomes problematic when implementing multisig accounts where:
+当实现多重签名账户时，这会变得有问题，其中：
 
-* You may want to use signers that don't have EVM addresses (like keys from hardware devices)
-* Each signer needs to be individually verified rather than treated as a collective identity
-* You need a threshold system to determine when enough valid signatures are present
+* 您可能希望使用没有 EVM 地址的签名者（例如来自硬件设备的密钥）
+* 需要单独验证每个签名者，而不是将其视为一个集体身份
+* 您需要一个阈值系统来确定何时存在足够的有效签名
 
-The https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/SignatureChecker.sol[SignatureChecker] library is useful for verifying EOA and ERC-1271 signatures, but it's not designed for more complex arrangements like threshold-based multisigs.
+https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/SignatureChecker.sol[SignatureChecker] 库可用于验证 EOA 和 ERC-1271 签名，但它并非设计用于更复杂的安排，例如基于阈值的多重签名。
 
-== ERC-7913 Signers
+== ERC-7913 签名者
 
-https://eips.ethereum.org/EIPS/eip-7913[ERC-7913] extends the concept of signer representation to include keys that don't have EVM addresses, addressing this limitation. OpenZeppelin implements this standard through three contracts:
+https://eips.ethereum.org/EIPS/eip-7913[ERC-7913] 扩展了签名者表示的概念，以包括没有 EVM 地址的密钥，从而解决了这一限制。 OpenZeppelin 通过三个合约实现此标准：
 
 === SignerERC7913
 
-The xref:api:utils.adoc#SignerERC7913[`SignerERC7913`] contract allows a single ERC-7913 formatted signer to control an account. The signer is represented as a `bytes` object that concatenates a verifier address and a key: `verifier || key`.
+xref:api:utils.adoc#SignerERC7913[`SignerERC7913`] 合约允许单个 ERC-7913 格式的签名者控制一个账户。签名者表示为一个 `bytes` 对象，该对象连接一个验证者地址和一个密钥：`verifier || key`。
 
 [source,solidity]
 ----
@@ -54,7 +54,7 @@ contract MyAccountERC7913 is Account, SignerERC7913, ERC7739, ERC7821, ERC721Hol
         _setSigner(signer);
     }
 
-    /// @dev Allows the entry point as an authorized executor.
+    /// @dev 允许入口点作为授权的执行者。
     function _erc7821AuthorizedExecutor(
         address caller,
         bytes32 mode,
@@ -65,11 +65,11 @@ contract MyAccountERC7913 is Account, SignerERC7913, ERC7739, ERC7821, ERC721Hol
 }
 ----
 
-WARNING: Leaving an account uninitialized may leave it unusable since no public key was associated with it.
+WARNING: 如果账户未初始化，可能会使其无法使用，因为没有公钥与其关联。
 
 === MultiSignerERC7913
 
-The xref:api:utils/cryptography.adoc#MultiSignerERC7913[`MultiSignerERC7913`] contract extends this concept to support multiple signers with a threshold-based signature verification system.
+xref:api:utils/cryptography.adoc#MultiSignerERC7913[`MultiSignerERC7913`] 合约扩展了这个概念，以支持具有基于阈值的签名验证系统的多个签名者。
 
 [source,solidity]
 ----
@@ -81,6 +81,7 @@ pragma solidity ^0.8.27;
 import {Account} from "@openzeppelin/community-contracts/account/Account.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import {ERC7739} from "@openzeppelin/community-contracts/utils/cryptography/signers/ERC7739.sol";
 import {ERC7821} from "@openzeppelin/community-contracts/account/extensions/ERC7821.sol";
@@ -115,7 +116,7 @@ contract MyAccountMultiSigner is
         _setThreshold(threshold);
     }
 
-    /// @dev Allows the entry point as an authorized executor.
+    /// @dev 允许入口点作为授权的执行者。
     function _erc7821AuthorizedExecutor(
         address caller,
         bytes32 mode,
@@ -126,17 +127,17 @@ contract MyAccountMultiSigner is
 }
 ----
 
-This implementation is ideal for standard multisig setups where each signer has equal authority, and a fixed number of approvals is required.
+此实现非常适合标准多重签名设置，其中每个签名者具有相同的权限，并且需要固定数量的批准。
 
-The `MultiSignerERC7913` contract provides several key features for managing multi-signature accounts. It maintains a set of authorized signers and implements a threshold-based system that requires a minimum number of signatures to approve operations. The contract includes an internal interface for managing signers, allowing for the addition and removal of authorized parties.
+`MultiSignerERC7913` 合约提供了几个用于管理多重签名账户的关键功能。它维护一组授权签名者，并实现一个基于阈值的系统，该系统需要最少数量的签名才能批准操作。该合约包括一个用于管理签名者的内部接口，允许添加和删除授权方。
 
-NOTE: `MultiSignerERC7913` safeguards to ensure that the threshold remains achievable based on the current number of active signers, preventing situations where operations could become impossible to execute.
+NOTE: `MultiSignerERC7913` 采取保护措施，以确保阈值根据当前活动签名者的数量保持可实现，从而防止操作可能无法执行的情况。
 
-The contract also provides public functions for querying signer information: xref:api:utils/cryptography.adoc#MultiSignerERC7913-isSigner-bytes-[`isSigner(bytes memory signer)`] to check if a given signer is authorized, xref:api:utils/cryptography.adoc#MultiSignerERC7913-getSigners-uint64-uint64-[`getSigners(uint64 start, uint64 end)`] to retrieve a paginated list of authorized signers, and xref:api:utils/cryptography.adoc#MultiSignerERC7913-getSignerCount[`getSignerCount()`] to get the total number of signers. These functions are useful when validating signatures, implementing customized access control logic, or building user interfaces that need to display signer information.
+该合约还提供了用于查询签名者信息的公共函数：xref:api:utils/cryptography.adoc#MultiSignerERC7913-isSigner-bytes-[`isSigner(bytes memory signer)`] 用于检查给定的签名者是否已授权，xref:api:utils/cryptography.adoc#MultiSignerERC7913-getSigners-uint64-uint64-[`getSigners(uint64 start, uint64 end)`] 用于检索授权签名者的分页列表，以及 xref:api:utils/cryptography.adoc#MultiSignerERC7913-getSignerCount[`getSignerCount()`] 用于获取签名者的总数。在验证签名、实施自定义访问控制逻辑或构建需要显示签名者信息的用户界面时，这些函数非常有用。
 
 === MultiSignerERC7913Weighted
 
-For more sophisticated governance structures, the xref:api:utils/cryptography.adoc#MultiSignerERC7913Weighted[`MultiSignerERC7913Weighted`] contract extends `MultiSignerERC7913` by assigning different weights to each signer.
+对于更复杂的治理结构，xref:api:utils/cryptography.adoc#MultiSignerERC7913Weighted[`MultiSignerERC7913Weighted`] 合约通过为每个签名者分配不同的权重来扩展 `MultiSignerERC7913`。
 
 [source,solidity]
 ----
@@ -148,7 +149,7 @@ pragma solidity ^0.8.27;
 import {Account} from "@openzeppelin/community-contracts/account/Account.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC1155Holder.sol";
 import {ERC7739} from "@openzeppelin/community-contracts/utils/cryptography/signers/ERC7739.sol";
 import {ERC7821} from "@openzeppelin/community-contracts/account/extensions/ERC7821.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
@@ -187,7 +188,7 @@ contract MyAccountMultiSignerWeighted is
         _setSignerWeights(signers, weights);
     }
 
-    /// @dev Allows the entry point as an authorized executor.
+    /// @dev 允许入口点作为授权的执行者。
     function _erc7821AuthorizedExecutor(
         address caller,
         bytes32 mode,
@@ -198,26 +199,26 @@ contract MyAccountMultiSignerWeighted is
 }
 ----
 
-This implementation is perfect for scenarios where different signers should have varying levels of authority, such as:
+此实现非常适合以下情况：不同的签名者应具有不同的权限级别，例如：
 
-* Board members with different voting powers
-* Organizational structures with hierarchical decision-making
-* Hybrid governance systems combining core team and community members
-* Execution setups like "social recovery" where you trust particular guardians more than others
+* 具有不同投票权的董事会成员
+* 具有分层决策的组织结构
+* 结合核心团队和社区成员的混合治理系统
+* 像“社交恢复”这样的执行设置，在这些设置中，您比其他人更信任特定的监护人
 
-The `MultiSignerERC7913Weighted` contract extends `MultiSignerERC7913` with a weighting system. Each signer can have a custom weight, and operations require the total weight of signing participants to meet or exceed the threshold. Signers without explicit weights default to a weight of 1.
+`MultiSignerERC7913Weighted` 合约使用加权系统扩展了 `MultiSignerERC7913`。每个签名者都可以具有自定义权重，并且操作需要签名参与者的总权重达到或超过阈值。没有明确权重的签名者默认为权重 1。
 
-NOTE: When setting up a weighted multisig, ensure the threshold value matches the scale used for signer weights. For example, if signers have weights like 1, 2, or 3, then a threshold of 4 would require at least two signers (e.g., one with weight 1 and one with weight 3).
+NOTE: 设置加权多重签名时，请确保阈值与用于签名者权重的比例匹配。例如，如果签名者的权重为 1、2 或 3，则阈值 4 将需要至少两个签名者（例如，一个权重为 1，一个权重为 3）。
 
-== Setting Up a Multisig Account
+== 设置多重签名账户
 
-To create a multisig account, you need to:
+要创建多重签名账户，您需要：
 
-1. Define your signers
-2. Determine your threshold
-3. Initialize your account with these parameters
+1. 定义您的签名者
+2. 确定您的阈值
+3. 使用这些参数初始化您的账户
 
-The example below demonstrates setting up a 2-of-3 multisig account with different types of signers:
+下面的示例演示了使用不同类型的签名者设置 2-of-3 多重签名账户：
 
 [source,solidity]
 ----
@@ -253,7 +254,7 @@ function setupMultisigAccount() external {
 }
 ----
 
-For a weighted multisig, you would also specify weights:
+对于加权多重签名，您还需要指定权重：
 
 [source,solidity]
 ----
@@ -279,13 +280,13 @@ function setupWeightedMultisigAccount() external {
 }
 ----
 
-IMPORTANT: The xref:api:utils/cryptography.adoc#MultiSignerERC7913-_validateReachableThreshold--[`_validateReachableThreshold`] function ensures that the sum of weights for all active signers meets or exceeds the threshold. Any customization built on top of the multisigner contracts must ensure the threshold is always reachable.
+IMPORTANT: xref:api:utils/cryptography.adoc#MultiSignerERC7913-_validateReachableThreshold--[`_validateReachableThreshold`] 函数确保所有活动签名者的权重之和达到或超过阈值。 构建在多重签名合约之上的任何自定义都必须确保阈值始终可达到。
 
-For multisig accounts, the signature is a complex structure that contains both the signers and their individual signatures. The format follows ERC-7913's specification and must be properly encoded.
+对于多重签名账户，签名是一个复杂的结构，其中包含签名者及其各自的签名。 该格式遵循 ERC-7913 的规范，并且必须正确编码。
 
-=== Signature Format
+=== 签名格式
 
-The multisig signature is encoded as:
+多重签名编码为：
 
 [source,solidity]
 ----
@@ -295,12 +296,12 @@ abi.encode(
 )
 ----
 
-Where:
+其中：
 
-* `signers` is an array of the signers participating in this particular signature
-* `signatures` is an array of the individual signatures corresponding to each signer
+* `signers` 是参与此特定签名的签名者数组
+* `signatures` 是与每个签名者对应的各个签名数组
 
 [NOTE]
 ====
-To avoid duplicate signers, the contract uses `keccak256` to generate a unique id for each signer. When providing a multisignature, the `signers` array should be sorted in ascending order by `keccak256`, and the `signatures` array must match the order of their corresponding signers.
+为了避免重复的签名者，该合约使用 `keccak256` 为每个签名者生成唯一 ID。 提供多重签名时，`signers` 数组应按 `keccak256` 的升序排序，并且 `signatures` 数组必须与其对应的签名者的顺序匹配。
 ====

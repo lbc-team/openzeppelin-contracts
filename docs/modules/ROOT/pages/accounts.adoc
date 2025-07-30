@@ -1,12 +1,12 @@
-= Smart Accounts
+= 智能账户
 
-OpenZeppelin provides a simple xref:api:account.adoc#Account[`Account`] implementation including only the basic logic to handle user operations in compliance with ERC-4337. Developers who want to build their own account can leverage it to bootstrap custom implementations.
+OpenZeppelin 提供了一个简单的 xref:api:account.adoc#Account[`Account`] 实现，仅包含符合 ERC-4337 的处理用户操作的基本逻辑。希望构建自己的账户的开发者可以利用它来引导自定义实现。
 
-User operations are validated using an xref:api:utils.adoc#AbstractSigner[`AbstractSigner`], which requires to implement the internal xref:api:utils.adoc#AbstractSigner-_rawSignatureValidation-bytes32-bytes-[`_rawSignatureValidation`] function, of which we offer a set of implementations to cover a wide customization range. This is the lowest-level signature validation layer and is used to wrap other validation methods like the Account's xref:api:account.adoc#Account-validateUserOp-struct-PackedUserOperation-bytes32-uint256-[`validateUserOp`].
+用户操作使用 xref:api:utils.adoc#AbstractSigner[`AbstractSigner`] 进行验证，这需要实现内部 xref:api:utils.adoc#AbstractSigner-_rawSignatureValidation-bytes32-bytes-[`_rawSignatureValidation`] 函数，我们提供了一组实现来覆盖广泛的自定义范围。这是最低级别的签名验证层，用于包装其他验证方法，例如 Account 的 xref:api:account.adoc#Account-validateUserOp-struct-PackedUserOperation-bytes32-uint256-[`validateUserOp`]。
 
-== Setting up an account
+== 设置账户
 
-To setup an account, you can either start configuring it using our Wizard and selecting a predefined validation scheme, or bring your own logic and start by inheriting xref:api:account.adoc#Account[`Account`] from scratch. 
+要设置一个账户，你可以使用我们的 Wizard 并选择一个预定义的验证方案来开始配置它，或者自带你的逻辑并从头继承 xref:api:account.adoc#Account[`Account`] 开始。
 
 ++++
 <script async src="https://wizard.openzeppelin.com/build/embed.js"></script>
@@ -14,39 +14,39 @@ To setup an account, you can either start configuring it using our Wizard and se
 <oz-wizard data-tab="Account" style="display: block; min-height: 40rem;"></oz-wizard>
 ++++
 
-NOTE: Accounts don't support xref:erc721.adoc[ERC-721] and xref:erc1155.adoc[ERC-1155] tokens natively since these require the receiving address to implement an acceptance check. It is recommended to inherit xref:api:token/ERC721.adoc#ERC721Holder[ERC721Holder], xref:api:token/ERC1155.adoc#ERC1155Holder[ERC1155Holder] to include these checks in your account.
+NOTE: 账户本身不支持 xref:erc721.adoc[ERC-721] 和 xref:erc1155.adoc[ERC-1155] 代币，因为这些代币要求接收地址实现接受检查。建议继承 xref:api:token/ERC721.adoc#ERC721Holder[ERC721Holder]，xref:api:token/ERC1155.adoc#ERC1155Holder[ERC1155Holder] 以在你的账户中包含这些检查。
 
-=== Selecting a signer
+=== 选择签名器
 
-Since the minimum requirement of xref:api:account.adoc#Account[`Account`] is to provide an implementation of xref:api:utils/cryptography.adoc#AbstractSigner-_rawSignatureValidation-bytes32-bytes-[`_rawSignatureValidation`], the library includes specializations of the `AbstractSigner` contract that use custom digital signature verification algorithms. Some examples that you can select from include:
+由于 xref:api:account.adoc#Account[`Account`] 的最低要求是提供 xref:api:utils/cryptography.adoc#AbstractSigner-_rawSignatureValidation-bytes32-bytes-[`_rawSignatureValidation`] 的实现，因此该库包含 `AbstractSigner` 合约的特殊化，该合约使用自定义数字签名验证算法。你可以选择的一些示例包括:
 
-* xref:api:utils/cryptography.adoc#SignerECDSA[`SignerECDSA`]: Verifies signatures produced by regular EVM Externally Owned Accounts (EOAs).
-* xref:api:utils/cryptography.adoc#SignerP256[`SignerP256`]: Validates signatures using the secp256r1 curve, common for World Wide Web Consortium (W3C) standards such as FIDO keys, passkeys or secure enclaves.
-* xref:api:utils/cryptography.adoc#SignerRSA[`SignerRSA`]: Verifies signatures of traditional PKI systems and X.509 certificates.
-* xref:api:utils/cryptography.adoc#SignerERC7702[`SignerERC7702`]: Checks EOA signatures delegated to this signer using https://eips.ethereum.org/EIPS/eip-7702#set-code-transaction[EIP-7702 authorizations]
-* xref:api:utils/cryptography.adoc#SignerERC7913[`SignerERC7913`]: Verifies generalized signatures following https://eips.ethereum.org/EIPS/eip-7913[ERC-7913].
-* https://docs.openzeppelin.com/community-contracts/0.0.1/api/utils#SignerZKEmail[`SignerZKEmail`]: Enables email-based authentication for smart contracts using zero knowledge proofs of email authority signatures.
-* xref:api:utils/cryptography.adoc#MultiSignerERC7913[`MultiSignerERC7913`]: Allows using multiple ERC-7913 signers with a threshold-based signature verification system.
-* xref:api:utils/cryptography.adoc#MultiSignerERC7913Weighted[`MultiSignerERC7913Weighted`]: Overrides the threshold mechanism of xref:api:utils/cryptography.adoc#MultiSignerERC7913[`MultiSignerERC7913`], offering different weights per signer.
+* xref:api:utils/cryptography.adoc#SignerECDSA[`SignerECDSA`]: 验证由常规 EVM 外部拥有账户 (EOA) 生成的签名。
+* xref:api:utils/cryptography.adoc#SignerP256[`SignerP256`]: 使用 secp256r1 曲线验证签名，这对于万维网联盟 (W3C) 标准（如 FIDO 密钥、通行密钥或安全 enclave）很常见。
+* xref:api:utils/cryptography.adoc#SignerRSA[`SignerRSA`]: 验证传统 PKI 系统和 X.509 证书的签名。
+* xref:api:utils/cryptography.adoc#SignerERC7702[`SignerERC7702`]: 使用 https://eips.ethereum.org/EIPS/eip-7702#set-code-transaction[EIP-7702 授权]检查委托给此签名者的 EOA 签名
+* xref:api:utils/cryptography.adoc#SignerERC7913[`SignerERC7913`]: 验证遵循 https://eips.ethereum.org/EIPS/eip-7913[ERC-7913] 的通用签名。
+* https://docs.openzeppelin.com/community-contracts/0.0.1/api/utils#SignerZKEmail[`SignerZKEmail`]: 使用电子邮件授权签名的零知识证明，为智能合约启用基于电子邮件的身份验证。
+* xref:api:utils/cryptography.adoc#MultiSignerERC7913[`MultiSignerERC7913`]: 允许使用具有基于阈值的签名验证系统的多个 ERC-7913 签名者。
+* xref:api:utils/cryptography.adoc#MultiSignerERC7913Weighted[`MultiSignerERC7913Weighted`]: 覆盖 xref:api:utils/cryptography.adoc#MultiSignerERC7913[`MultiSignerERC7913`] 的阈值机制，为每个签名者提供不同的权重。
 
-TIP: Given xref:api:utils/cryptography.adoc#SignerERC7913[`SignerERC7913`] provides a generalized standard for signature validation, you don't need to implement your own xref:api:utils/cryptography.adoc#AbstractSigner[`AbstractSigner`] for different signature schemes, consider bringing your own ERC-7913 verifier instead.
+TIP: 鉴于 xref:api:utils/cryptography.adoc#SignerERC7913[`SignerERC7913`] 为签名验证提供了一个通用的标准，你无需为不同的签名方案实现你自己的 xref:api:utils/cryptography.adoc#AbstractSigner[`AbstractSigner`]，请考虑自带你自己的 ERC-7913 验证器。
 
-==== Accounts factory
+==== 账户工厂
 
-The first time you send an user operation, your account will be created deterministically (i.e. its code and address can be predicted) using the the `initCode` field in the UserOperation. This field contains both the address of a smart contract (the factory) and the data required to call it and create your smart account.
+第一次发送用户操作时，你的账户将使用 UserOperation 中的 `initCode` 字段以确定性的方式（即，可以预测其代码和地址）创建。此字段包含智能合约（工厂）的地址以及调用它并创建你的智能账户所需的数据。
 
-Suggestively, you can create your own account factory using the xref:api:proxy.adoc#Clones[Clones library], taking advantage of decreased deployment costs and account address predictability.
+建议你可以使用 xref:api:proxy.adoc#Clones[Clones library] 创建你自己的账户工厂，从而利用降低的部署成本和账户地址可预测性。
 
 [source,solidity]
 ----
 include::api:example$account/MyFactoryAccount.sol[]
 ----
 
-Account factories should be carefully implemented to ensure the account address is deterministically tied to the initial owners. This prevents frontrunning attacks where a malicious actor could deploy the account with their own owners before the intended owner does. The factory should include the owner's address in the salt used for address calculation.
+账户工厂应谨慎实施，以确保账户地址以确定方式与初始所有者相关联。这可以防止抢跑攻击，即恶意行为者可以在预期所有者之前部署具有他们自己的所有者的账户。工厂应在用于地址计算的盐中包含所有者的地址。
 
-==== Handling initialization
+==== 处理初始化
 
-Most smart accounts are deployed by a factory, the best practice is to create xref:api:proxy.adoc#minimal_clones[minimal clones] of initializable contracts. These signer implementations provide an initializable design by default so that the factory can interact with the account to set it up right after deployment in a single transaction.
+大多数智能账户都由工厂部署，最佳实践是创建可初始化合约的 xref:api:proxy.adoc#minimal_clones[最小克隆]。这些签名者实现默认提供可初始化的设计，以便工厂可以在单个交易中与账户交互以在部署后立即设置它。
 
 [source,solidity]
 ----
@@ -63,17 +63,17 @@ contract MyAccount is Initializable, Account, SignerECDSA, ... {
 }
 ----
 
-Note that some account implementations may be deployed directly and therefore, won't require a factory.
+请注意，某些账户实现可能会直接部署，因此不需要工厂。
 
-WARNING: Leaving an account uninitialized may leave it unusable since no public key was associated with it.
+WARNING: 如果未初始化某个账户，可能会使其无法使用，因为没有公钥与之关联。
 
-=== Signature validation
+=== 签名验证
 
-Regularly, accounts implement https://eips.ethereum.org/EIPS/eip-1271[ERC-1271] to enable smart contract signature verification given its wide adoption. To be compliant means that smart contract exposes an xref:api:interfaces.adoc#IERC1271-isValidSignature-bytes32-bytes-[`isValidSignature(bytes32 hash, bytes memory signature)`] method that returns `0x1626ba7e` to identify whether the signature is valid.
+通常，账户实现 https://eips.ethereum.org/EIPS/eip-1271[ERC-1271] 以启用智能合约签名验证，因为该标准已被普遍采用。要符合标准，意味着智能合约公开了一个 xref:api:interfaces.adoc#IERC1271-isValidSignature-bytes32-bytes-[`isValidSignature(bytes32 hash, bytes memory signature)`] 方法，该方法返回 `0x1626ba7e` 来识别签名是否有效。
 
-The benefit of this standard is that it allows to receive any format of `signature` for a given `hash`. This generalized mechanism fits very well with the account abstraction principle of _bringing your own validation mechanism_.
+此标准的优点是它允许接收给定 `hash` 的任何格式的 `signature`。这种通用的机制非常符合_自带你自己的验证机制_的账户抽象原则。
 
-This is how you enable ERC-1271 using an xref:api:utils/cryptography.adoc#AbstractSigner[`AbstractSigner`]:
+这是你如何使用 xref:api:utils/cryptography.adoc#AbstractSigner[`AbstractSigner`] 启用 ERC-1271 的方法：
 
 [source,solidity]
 ----
@@ -82,15 +82,15 @@ function isValidSignature(bytes32 hash, bytes calldata signature) public view ov
 }
 ----
 
-IMPORTANT: We recommend using xref:api:utils/cryptography.adoc#ERC7739[ERC7739] to avoid replayability across accounts. This defensive rehashing mechanism that prevents signatures for this account to be replayed in another account controlled by the same signer. See xref:accounts.adoc#erc_7739_signatures[ERC-7739 signatures].
+IMPORTANT: 我们建议使用 xref:api:utils/cryptography.adoc#ERC7739[ERC7739] 以避免跨账户的可重放性。这种防御性的重新哈希机制可以防止此账户的签名在同一签名者控制的另一个账户中被重放。请参阅 xref:accounts.adoc#erc_7739_signatures[ERC-7739 签名]。
 
-=== Batched execution
+=== 批量执行
 
-Batched execution allows accounts to execute multiple calls in a single transaction, which is particularly useful for bundling operations that need to be atomic. This is especially valuable in the context of account abstraction where you want to minimize the number of user operations and associated gas costs. xref:api:account.adoc#ERC7821[`ERC-7821`] standard provides a minimal interface for batched execution. 
+批量执行允许账户在单个交易中执行多个调用，这对于捆绑需要原子性的操作特别有用。这在账户抽象的上下文中尤其有价值，你希望最大程度地减少用户操作的数量和相关的 Gas 成本。xref:api:account.adoc#ERC7821[`ERC-7821`] 标准为批量执行提供了一个最小的接口。
 
-The library implementation supports a single batch mode (`0x01000000000000000000`) and allows accounts to execute multiple calls atomically. The standard includes access control through the xref:api:account.adoc#ERC7821-_erc7821AuthorizedExecutor-address-bytes32-bytes-[`_erc7821AuthorizedExecutor`] function, which by default only allows the contract itself to execute batches.
+该库实现支持单个批处理模式 (`0x01000000000000000000`)，并允许账户原子地执行多个调用。该标准包括通过 xref:api:account.adoc#ERC7821-_erc7821AuthorizedExecutor-address-bytes32-bytes-[`_erc7821AuthorizedExecutor`] 函数进行访问控制，该函数默认仅允许合约本身执行批处理。
 
-Here's an example of how to use batched execution using EIP-7702:
+以下是如何使用 EIP-7702 使用批量执行的示例：
 
 [source,solidity]
 ----
@@ -100,6 +100,7 @@ import {SignerERC7702} from "@openzeppelin/community-contracts/utils/cryptograph
 
 contract MyAccount is Account, SignerERC7702, ERC7821 {
     // Override to allow the entrypoint to execute batches
+    // 覆盖以允许入口点执行批处理
     function _erc7821AuthorizedExecutor(
         address caller,
         bytes32 mode,
@@ -110,13 +111,14 @@ contract MyAccount is Account, SignerERC7702, ERC7821 {
 }
 ----
 
-The batched execution data follows a specific format that includes the calls to be executed. This format follows the same format as https://eips.ethereum.org/EIPS/eip-7579#execution-behavior[ERC-7579 execution] but only supports `0x01` call type (i.e. batched `call`) and default execution type (i.e. reverts if at least one subcall does).
+批量执行数据遵循特定的格式，该格式包括要执行的调用。此格式遵循与 https://eips.ethereum.org/EIPS/eip-7579#execution-behavior[ERC-7579 执行] 相同的格式，但仅支持 `0x01` 调用类型（即，批量 `call`）和默认执行类型（即，如果至少一个子调用失败，则恢复）。
 
-To encode an ERC-7821 batch, you can use https://viem.sh/[viem]'s utilities:
+要编码 ERC-7821 批处理，你可以使用 https://viem.sh/[viem] 的实用程序：
 
 [source,typescript]
 ----
 // CALL_TYPE_BATCH, EXEC_TYPE_DEFAULT, ..., selector, payload 
+// CALL_TYPE_BATCH, EXEC_TYPE_DEFAULT, ..., 选择器, 有效负载
 const mode = encodePacked(
   ["bytes1", "bytes1", "bytes4", "bytes4", "bytes22"],
   ["0x01", "0x00", "0x00000000", "0x00000000", "0x00000000000000000000000000000000000000000000"]
@@ -151,17 +153,17 @@ const userOpData = encodeFunctionData({
 });
 ----
 
-== Bundle a `UserOperation`
+== 捆绑 `UserOperation`
 
-xref:account-abstraction.adoc#useroperation[UserOperations] are a powerful abstraction layer that enable more sophisticated transaction capabilities compared to traditional Ethereum transactions. To get started, you'll need to an account, which you can get by xref:accounts.adoc#accounts_factory[deploying a factory] for your implementation.
+xref:account-abstraction.adoc#useroperation[UserOperations] 是一个强大的抽象层，与传统的 Ethereum 交易相比，它可以实现更复杂的交易功能。要开始使用，你需要一个账户，你可以通过 xref:accounts.adoc#accounts_factory[部署一个工厂] 来实现你的实现。
 
-=== Preparing a UserOp
+=== 准备 UserOp
 
-A UserOperation is a struct that contains all the necessary information for the EntryPoint to execute your transaction. You'll need the `sender`, `nonce`, `accountGasLimits` and `callData` fields to construct a `PackedUserOperation` that can be signed later (to populate the `signature` field).
+UserOperation 是一个结构体，其中包含 EntryPoint 执行你的交易所需的所有必要信息。你需要 `sender`、`nonce`、`accountGasLimits` 和 `callData` 字段来构造一个可以稍后签名的 `PackedUserOperation`（以填充 `signature` 字段）。
 
-TIP: Specify `paymasterAndData` with the address of a paymaster contract concatenated to `data` that will be passed to the paymaster's validatePaymasterUserOp function to support sponsorship as part of your user operation.
+TIP: 指定带有 paymaster 合约地址的 `paymasterAndData`，该合约地址连接到 `data`，该数据将传递给 paymaster 的 validatePaymasterUserOp 函数，以支持赞助作为你的用户操作的一部分。
 
-Here's how to prepare one using https://viem.sh/[viem]:
+以下是如何使用 https://viem.sh/[viem] 准备一个的方法：
 
 [source,typescript]
 ----
@@ -169,12 +171,15 @@ import { getContract, createWalletClient, http, Hex } from 'viem';
 
 const walletClient = createWalletClient({
   account, // See Viem's `privateKeyToAccount`
+           // 请参阅 Viem 的 `privateKeyToAccount`
   chain, // import { ... } from 'viem/chains';
+         // import { ... } from 'viem/chains';
   transport: http(),
 })
 
 const entrypoint = getContract({
   abi: [/* ENTRYPOINT ABI */],
+           /* ENTRYPOINT ABI */
   address: '0x<ENTRYPOINT_ADDRESS>',
   client: walletClient,
 });
@@ -184,11 +189,14 @@ const userOp = {
   nonce: await entrypoint.read.getNonce([sender, 0n]),
   initCode: "0x" as Hex,
   callData: '0x<CALLDATA_TO_EXECUTE_IN_THE_ACCOUNT>',
+           // <要在帐户中执行的 CALLDATA>
   accountGasLimits: encodePacked(
     ["uint128", "uint128"],
     [
       100_000n, // verificationGasLimit
+                // 验证GasLimit
       300_000n, // callGasLimit
+                // 调用GasLimit
     ]
   ),
   preVerificationGas: 50_000n,
@@ -196,7 +204,9 @@ const userOp = {
     ["uint128", "uint128"],
     [
       0n, // maxPriorityFeePerGas
+            // maxPriorityFeePerGas
       0n, // maxFeePerGas
+            // maxFeePerGas
     ]
   ),
   paymasterAndData: "0x" as Hex,
@@ -204,7 +214,7 @@ const userOp = {
 };
 ----
 
-In case your account hasn't been deployed yet, make sure to provide the `initCode` field as `abi.encodePacked(factory, factoryData)` to deploy the account within the same UserOp:
+如果你的账户尚未部署，请确保提供 `initCode` 字段作为 `abi.encodePacked(factory, factoryData)`，以便在同一 UserOp 中部署该账户：
 
 [source,typescript]
 ----
@@ -217,7 +227,9 @@ if (!deployed) {
       '0x<ACCOUNT_FACTORY_ADDRESS>',
       encodeFunctionData({
         abi: [/* ACCOUNT ABI */],
+                 /* ACCOUNT ABI */
         functionName: "<FUNCTION NAME>",
+                     // <函数名称>
         args: [...],
       }),
     ]
@@ -225,37 +237,40 @@ if (!deployed) {
 }
 ----
 
-==== Estimating gas
+==== 估算 Gas
 
-To calculate gas parameters of a `UserOperation`, developers should carefully consider the following fields:
+为了计算 `UserOperation` 的 Gas 参数，开发人员应仔细考虑以下字段:
 
-* `verificationGasLimit`: This covers the gas costs for signature verification, paymaster validation (if used), and account validation logic. While a typical value is around 100,000 gas units, this can vary significantly based on the complexity of your signature validation scheme in both the account and paymaster contracts.
+* `verificationGasLimit`: 这涵盖了签名验证、赞助商验证（如果使用）和账户验证逻辑的 Gas 成本。虽然一个典型的值约为 100,000 个 Gas 单位，但这可能会根据你的账户和赞助商合约中签名验证方案的复杂性而显着变化。
 
-* `callGasLimit`: This parameter accounts for the actual execution of your account's logic. It's recommended to use `eth_estimateGas` for each subcall and add additional buffer for computational overhead.
+* `callGasLimit`: 此参数用于计算你的账户逻辑的实际执行。建议对每个子调用使用 `eth_estimateGas`，并为计算开销添加额外的缓冲区。
 
-* `preVerificationGas`: This compensates for the EntryPoint's execution overhead. While 50,000 gas is a reasonable starting point, you may need to increase this value based on your UserOperation's size and specific bundler requirements.
+* `preVerificationGas`: 这补偿了 EntryPoint 的执行开销。虽然 50,000 Gas 是一个合理的起点，但你可能需要根据你的 UserOperation 的大小和特定的捆绑器要求来增加此值。
 
-NOTE: The `maxFeePerGas` and `maxPriorityFeePerGas` values are typically provided by your bundler service, either through their SDK or a custom RPC method.
+NOTE: `maxFeePerGas` 和 `maxPriorityFeePerGas` 值通常由你的捆绑器服务提供，无论是通过他们的 SDK 还是自定义 RPC 方法。
 
-IMPORTANT: A penalty of 10% (`UNUSED_GAS_PENALTY_PERCENT`) is applied on the amounts of `callGasLimit` and `paymasterPostOpGasLimit` gas that remains unused if the amount of remaining unused gas is greater than or equal to 40,000 (`PENALTY_GAS_THRESHOLD`).
+IMPORTANT: 如果剩余未使用的 Gas 量大于或等于 40,000 (`PENALTY_GAS_THRESHOLD`)，则对剩余未使用的 `callGasLimit` 和 `paymasterPostOpGasLimit` Gas 金额处以 10% (`UNUSED_GAS_PENALTY_PERCENT`) 的罚款。
 
-=== Signing the UserOp
+=== 签署 UserOp
 
-To sign a UserOperation, you'll need to first calculate its hash as an EIP-712 typed data structure using the EntryPoint's domain, then sign this hash using your account's signature scheme, and finally encode the resulting signature in the format that your account contract expects for verification.
+要签署 UserOperation，你首先需要使用 EntryPoint 的域将其哈希计算为 EIP-712 类型的数据结构，然后使用你的账户的签名方案签署此哈希，最后以你的账户合约期望用于验证的格式编码生成的签名。
 
 [source,typescript]
 ----
 import { signTypedData } from 'viem/actions';
 
 // EntryPoint v0.8 EIP-712 domain
+// EntryPoint v0.8 EIP-712 域
 const domain = {
   name: 'ERC4337',
   version: '1',
   chainId: 1, // Your target chain ID
+               // 你的目标链 ID
   verifyingContract: '0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108', // v08
 };
 
 // EIP-712 types for PackedUserOperation
+// PackedUserOperation 的 EIP-712 类型
 const types = {
   PackedUserOperation: [
     { name: 'sender', type: 'address' },
@@ -270,6 +285,7 @@ const types = {
 } as const;
 
 // Sign the UserOperation using EIP-712
+// 使用 EIP-712 签署 UserOperation
 userOp.signature = await eoa.signTypedData({
   domain,
   types,
@@ -287,7 +303,7 @@ userOp.signature = await eoa.signTypedData({
 });
 ----
 
-Alternatively, developers can get the raw user operation hash by using the Entrypoint's `getUserOpHash` function:
+或者，开发人员可以通过使用 Entrypoint 的 `getUserOpHash` 函数来获取原始用户操作哈希：
 
 [source,typescript]
 ----
@@ -295,18 +311,20 @@ const userOpHash = await entrypoint.read.getUserOpHash([userOp]);
 userOp.signature = await eoa.sign({ hash: userOpHash });
 ----
 
-IMPORTANT: Using `getUserOpHash` directly may provide a poorer user experience as users see an opaque hash rather than structured transaction data. In many cases, offchain signers won't have an option to sign a raw hash.
+IMPORTANT: 直接使用 `getUserOpHash` 可能会提供较差的用户体验，因为用户会看到一个不透明的哈希，而不是结构化的交易数据。在许多情况下，离线签名者将无法选择签署原始哈希。
 
-=== Sending the UserOp
+=== 发送 UserOp
 
-Finally, to send the user operation you can call `handleOps` on the Entrypoint contract and set yourself as the `beneficiary`. 
+最后，要发送用户操作，你可以调用 Entrypoint 合约上的 `handleOps` 并将自己设置为 `beneficiary`。
 
 [source,typescript]
 ----
 // Send the UserOperation
+// 发送 UserOperation
 const userOpReceipt = await walletClient
   .writeContract({
     abi: [/* ENTRYPOINT ABI */],
+             /* ENTRYPOINT ABI */
     address: '0x<ENTRYPOINT_ADDRESS>',
     functionName: "handleOps",
     args: [[userOp], eoa.address],
@@ -318,37 +336,38 @@ const userOpReceipt = await walletClient
   );
 
 // Print receipt
+// 打印收据
 console.log(userOpReceipt);
 ----
 
-TIP: Since you're bundling your user operations yourself, you can safely specify `preVerificationGas` and `maxFeePerGas` in 0.
+TIP: 由于你正在自己捆绑你的用户操作，因此你可以安全地在 0 中指定 `preVerificationGas` 和 `maxFeePerGas`。
 
-=== Using a Bundler
+=== 使用 Bundler
 
-For better reliability, consider using a bundler service. Bundlers provide several key benefits: they automatically handle gas estimation, manage transaction ordering, support bundling multiple operations together, and generally offer higher transaction success rates compared to self-bundling.
+为了获得更好的可靠性，请考虑使用 bundler 服务。Bundler 提供了一些关键优势: 它们自动处理 Gas 估算，管理交易排序，支持将多个操作捆绑在一起，并且通常提供比自捆绑更高的交易成功率。
 
-== Further notes
+== 进一步说明
 
-=== ERC-7739 Signatures
+=== ERC-7739 签名
 
-A common security practice to prevent user operation https://mirror.xyz/curiousapple.eth/pFqAdW2LiJ-6S4sg_u1z08k4vK6BCJ33LcyXpnNb8yU[replayability across smart contract accounts controlled by the same private key] (i.e. multiple accounts for the same signer) is to link the signature to the `address` and `chainId` of the account. This can be done by asking the user to sign a hash that includes these values.
+防止用户操作 https://mirror.xyz/curiousapple.eth/pFqAdW2LiJ-6S4sg_u1z08k4vK6BCJ33LcyXpnNb8yU[跨同一私钥控制的智能合约账户的可重放性]（即，同一签名者的多个账户）的常见安全做法是将签名链接到账户的 `address` 和 `chainId`。这可以通过要求用户签署包含这些值的哈希来完成。
 
-The problem with this approach is that the user might be prompted by the wallet provider to sign an https://x.com/howydev/status/1780353754333634738[obfuscated message], which is a phishing vector that may lead to a user losing its assets.
+这种方法的问题是钱包提供商可能会提示用户签署一个 https://x.com/howydev/status/1780353754333634738[模糊的消息]，这是一种网络钓鱼媒介，可能导致用户丢失其资产。
 
-To prevent this, developers may use xref:api:account#ERC7739Signer[`ERC7739Signer`], a utility that implements xref:api:interfaces#IERC1271[`IERC1271`] for smart contract signatures with a defensive rehashing mechanism based on a https://github.com/frangio/eip712-wrapper-for-eip1271[nested EIP-712 approach] to wrap the signature request in a context where there's clearer information for the end user.
+为防止这种情况，开发人员可以使用 xref:api:account#ERC7739Signer[`ERC7739Signer`]，这是一个实用程序，它实现了 xref:api:interfaces#IERC1271[`IERC1271`]，用于具有防御性重新哈希机制的智能合约签名，该机制基于 https://github.com/frangio/eip712-wrapper-for-eip1271[嵌套的 EIP-712 方法]来在为最终用户提供更清晰信息的上下文中包装签名请求。
 
-=== EIP-7702 Delegation
+=== EIP-7702 委托
 
-https://eips.ethereum.org/EIPS/eip-7702[EIP-7702] lets EOAs delegate to smart contracts while keeping their original signing key. This creates a hybrid account that works like an EOA for signing but has smart contract features. Protocols don't need major changes to support EIP-7702 since they already handle both EOAs and smart contracts (see xref:api:utils/cryptography.adoc#SignatureChecker[SignatureChecker]).
+https://eips.ethereum.org/EIPS/eip-7702[EIP-7702] 允许 EOA 委托给智能合约，同时保留其原始签名密钥。这创建了一个混合账户，该账户像 EOA 一样用于签名，但具有智能合约功能。协议不需要进行重大更改即可支持 EIP-7702，因为它们已经处理 EOA 和智能合约（请参阅 xref:api:utils/cryptography.adoc#SignatureChecker[SignatureChecker]）。
 
-The signature verification stays compatible: delegated EOAs are treated as contracts using ERC-1271, making it easy to redelegate to a contract with ERC-1271 support with little overhead by reusing the validation mechanism of the account. 
+签名验证保持兼容性: 委托的 EOA 被视为使用 ERC-1271 的合约，通过重用账户的验证机制，可以轻松地重新委托给支持 ERC-1271 的合约，而几乎没有开销。
 
-TIP: Learn more about delegating to an ERC-7702 account in our xref:eoa-delegation.adoc[EOA Delegation] section.
+TIP: 在我们的 xref:eoa-delegation.adoc[EOA 委托] 部分中了解更多关于委托给 ERC-7702 账户的信息。
 
-=== ERC-7579 Modules
+=== ERC-7579 模块
 
-Smart accounts have evolved to embrace modularity as a design principle, with popular implementations like https://erc7579.com/#supporters[Safe, Pimlico, Rhinestone, Etherspot and many others] agreeing on ERC-7579 as the standard for module interoperability. This standardization enables accounts to extend their functionality through external contracts while maintaining compatibility across different implementations.
+智能账户已经发展到采用模块化作为设计原则，流行的实现（如 https://erc7579.com/#supporters[Safe, Pimlico, Rhinestone, Etherspot 以及许多其他]）同意 ERC-7579 作为模块互操作性的标准。这种标准化使账户能够通过外部合约扩展其功能，同时保持跨不同实现的兼容性。
 
-OpenZeppelin Contracts provides both the building blocks for creating ERC-7579-compliant modules and an xref:api:account.adoc#AccountERC7579[`AccountERC7579`] implementation that supports installing and managing these modules. 
+OpenZeppelin Contracts 提供了用于创建符合 ERC-7579 的模块的构建块，以及支持安装和管理这些模块的 xref:api:account.adoc#AccountERC7579[`AccountERC7579`] 实现。
 
-TIP: Learn more in our https://docs.openzeppelin.com/community-contracts/0.0.1/account-modules[account modules] section.
+TIP: 在我们的 https://docs.openzeppelin.com/community-contracts/0.0.1/account-modules[账户模块]部分中了解更多信息。

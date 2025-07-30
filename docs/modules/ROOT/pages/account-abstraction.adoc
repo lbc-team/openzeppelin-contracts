@@ -1,52 +1,51 @@
-= Account Abstraction
+= 账户抽象
 
-Unlike Externally Owned Accounts (EOAs), smart contracts may contain arbitrary verification logic based on authentication mechanisms different to Ethereum's native xref:api:utils.adoc#ECDSA[ECDSA] and have execution advantages such as batching or gas sponsorship. To leverage these properties of smart contracts, the community has widely adopted https://eips.ethereum.org/EIPS/eip-4337[ERC-4337], a standard to process user operations through an alternative mempool.
+与外部所有账户 (EOA) 不同，智能合约可能包含基于不同于 Ethereum 的原生 xref:api:utils.adoc#ECDSA[ECDSA] 的身份验证机制的任意验证逻辑，并具有诸如批量处理或 Gas 赞助等执行优势。为了利用智能合约的这些特性，社区广泛采用了 https://eips.ethereum.org/EIPS/eip-4337[ERC-4337]，这是一种通过替代内存池处理用户操作的标准。
 
-The library provides multiple contracts for Account Abstraction following this standard as it enables more flexible and user-friendly interactions with applications. Account Abstraction use cases include wallets in novel contexts (e.g. embedded wallets), more granular configuration of accounts, and recovery mechanisms. 
+该库提供了多个用于账户抽象的合约，遵循此标准，因为它支持与应用程序进行更灵活和用户友好的交互。账户抽象用例包括新颖上下文中的钱包（例如，嵌入式钱包）、更精细的账户配置和恢复机制。
 
-== ERC-4337 Overview
+== ERC-4337 概述
 
-The ERC-4337 is a detailed specification of how to implement the necessary logic to handle operations without making changes to the protocol level (i.e. the rules of the blockchain itself). This specification defines the following components:
+ERC-4337 详细说明了如何在不更改协议级别（即区块链本身的规则）的情况下实现处理操作所需的逻辑。该规范定义了以下组件：
 
 === UserOperation
 
-A `UserOperation` is a higher-layer pseudo-transaction object that represents the intent of the account. This shares some similarities with regular EVM transactions like the concept of `gasFees` or `callData` but includes fields that enable new capabilities.
+`UserOperation` 是一个更高层的伪交易对象，表示账户的意图。这与常规 EVM 交易有一些相似之处，例如 `gasFees`（Gas 费用）或 `callData`（调用数据）的概念，但包括了启用新功能的字段。
 
 ```solidity
 struct PackedUserOperation {
     address sender;
     uint256 nonce;
-    bytes initCode; // concatenation of factory address and factoryData (or empty)
+    bytes initCode; // 工厂地址和工厂数据的串联（或为空）
     bytes callData;
-    bytes32 accountGasLimits; // concatenation of verificationGas (16 bytes) and callGas (16 bytes)
+    bytes32 accountGasLimits; // verificationGas (16 字节) 和 callGas (16 字节) 的串联
     uint256 preVerificationGas;
-    bytes32 gasFees; // concatenation of maxPriorityFee (16 bytes) and maxFeePerGas (16 bytes)
-    bytes paymasterAndData; // concatenation of paymaster fields (or empty)
+    bytes32 gasFees; // maxPriorityFee (16 字节) 和 maxFeePerGas (16 字节) 的串联
+    bytes paymasterAndData; // paymaster 字段的串联（或为空）
     bytes signature;
 }
 ```
 
-This process of bundling user operations involves several costs that the bundler must cover, including base transaction fees, calldata serialization, entrypoint execution, and paymaster context costs. To compensate for these expenses, bundlers use the `preVerificationGas` and `gasFees` fields to charge users appropriately.
+捆绑用户操作的过程涉及捆绑者必须承担的多个成本，包括基本交易费用、calldata 序列化、EntryPoint 执行和 Paymaster 上下文成本。为了补偿这些开销，捆绑者使用 `preVerificationGas` 和 `gasFees` 字段来适当地向用户收费。
 
-NOTE: Estimating `preVerificationGas` is not standardized as it varies based on network conditions such as gas prices and the size of the operation bundle.
+NOTE: 估算 `preVerificationGas` 未标准化，因为它因网络状况（如 Gas 价格和操作捆绑包的大小）而异。
 
-TIP: Use xref:api:account.adoc#ERC4337Utils[`ERC4337Utils`] to manipulate the `UserOperation` struct and other ERC-4337 related values.
+TIP: 使用 xref:api:account.adoc#ERC4337Utils[`ERC4337Utils`] 来操作 `UserOperation` 结构和其他 ERC-4337 相关值。
 
 === Entrypoint
 
-Each `UserOperation` is executed through a contract known as the https://etherscan.io/address/0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108#code[`EntryPoint`]. This contract is a singleton deployed across multiple networks at the same address although other custom implementations may be used.
+每个 `UserOperation` 都通过一个名为 https://etherscan.io/address/0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108#code[`EntryPoint`] 的合约执行。此合约是一个单例，部署在多个网络上的同一地址，尽管可以使用其他自定义实现。
 
-The Entrypoint contracts is considered a trusted entity by the account.
+EntryPoint 合约被帐户视为受信任的实体。
 
 === Bundlers
 
-The bundler is a piece of _offchain_ infrastructure that is in charge of processing an alternative mempool of user operations. Bundlers themselves call the Entrypoint contract's `handleOps` function with an array of UserOperations that are executed and included in a block.
+捆绑器是一种 _offchain_ 基础设施，负责处理用户操作的替代内存池。捆绑器本身使用要执行并包含在块中的 UserOperations 数组调用 EntryPoint 合约的 `handleOps` 函数。
 
-During the process, the bundler pays for the gas of executing the transaction and gets refunded during the execution phase of the Entrypoint contract.
+在此过程中，捆绑器支付执行交易的 Gas 费用，并在 EntryPoint 合约的执行阶段获得退款。
 
 ```solidity
-/// @dev Process `userOps` and `beneficiary` receives all
-/// the gas fees collected during the bundle execution.
+/// @dev 处理 `userOps`，`beneficiary` 接收在捆绑包执行期间收集的所有 Gas 费用。
 function handleOps(
     PackedUserOperation[] calldata ops,
     address payable beneficiary
@@ -55,7 +54,7 @@ function handleOps(
 
 === Account Contract
 
-The Account Contract is a smart contract that implements the logic required to validate a `UserOperation` in the context of ERC-4337. Any smart contract account should conform with the `IAccount` interface to validate operations.
+账户合约是一个实现验证 ERC-4337 上下文中的 `UserOperation` 所需逻辑的智能合约。任何智能合约账户都应符合 `IAccount` 接口以验证操作。
 
 ```solidity
 interface IAccount {
@@ -63,7 +62,7 @@ interface IAccount {
 }
 ```
 
-Similarly, an Account should have a way to execute these operations by either handling arbitrary calldata on its `fallback` or implementing the `IAccountExecute` interface:
+同样，账户应该有一种方法来执行这些操作，方法是在其 `fallback` 上处理任意 calldata 或实现 `IAccountExecute` 接口：
 
 ```solidity
 interface IAccountExecute {
@@ -71,30 +70,30 @@ interface IAccountExecute {
 }
 ```
 
-NOTE: The `IAccountExecute` interface is optional. Developers might want to use xref:api:account.adoc#ERC7821[`ERC-7821`] for a minimal batched execution interface or rely on ERC-7579 or any other execution logic.
+NOTE: `IAccountExecute` 接口是可选的。开发者可能想使用 xref:api:account.adoc#ERC7821[`ERC-7821`] 来获得最小的批量执行接口，或者依赖 ERC-7579 或任何其他执行逻辑。
 
-To build your own account, see xref:accounts.adoc[accounts].
+要构建你自己的账户，请参阅 xref:accounts.adoc[accounts]。
 
 === Factory Contract
 
-The smart contract accounts are created by a Factory contract defined by the Account developer. This factory receives arbitrary bytes as `initData` and returns an `address` where the logic of the account is deployed.
+智能合约账户由账户开发者定义的 Factory 合约创建。此工厂接收任意字节作为 `initData`，并返回部署账户逻辑的 `address`。
 
-To build your own factory, see xref:accounts.adoc#accounts_factory[account factories].
+要构建你自己的工厂，请参阅 xref:accounts.adoc#accounts_factory[account factories]。
 
 === Paymaster Contract
 
-A Paymaster is an optional entity that can sponsor gas fees for Accounts, or allow them to pay for those fees in ERC-20 instead of native currency. This abstracts gas away of the user experience in the same way that computational costs of cloud servers are abstracted away from end-users.
+Paymaster 是一种可选实体，可以赞助账户的 Gas 费用，或者允许他们以 ERC-20 代币而不是原生货币支付这些费用。这以与云服务器的计算成本从最终用户处抽象出来的方式相同的方式抽象了用户体验中的 Gas 费用。
 
-To build your own paymaster, see https://docs.openzeppelin.com/community-contracts/0.0.1/paymasters[paymasters].
+要构建你自己的 Paymaster，请参阅 https://docs.openzeppelin.com/community-contracts/0.0.1/paymasters[paymasters]。
 
-== Further notes
+== 更多说明
 
-=== ERC-7562 Validation Rules
+=== ERC-7562 验证规则
 
-To process a bundle of `UserOperations`, bundlers call xref:api:account.adoc#Account-validateUserOp-struct-PackedUserOperation-bytes32-uint256-[`validateUserOp`] on each operation sender to check whether the operation can be executed. However, the bundler has no guarantee that the state of the blockchain will remain the same after the validation phase. To overcome this problem, https://eips.ethereum.org/EIPS/eip-7562[ERC-7562] proposes a set of limitations to EVM code so that bundlers (or node operators) are protected from unexpected state changes.
+为了处理 `UserOperations` 的捆绑包，捆绑器在每个操作发送者上调用 xref:api:account.adoc#Account-validateUserOp-struct-PackedUserOperation-bytes32-uint256-[`validateUserOp`] 以检查是否可以执行该操作。但是，捆绑器无法保证区块链的状态在验证阶段之后保持不变。为了克服这个问题，https://eips.ethereum.org/EIPS/eip-7562[ERC-7562] 提出了一组对 EVM 代码的限制，以便捆绑器（或节点运算符）免受意外状态更改的影响。
 
-These rules outline the requirements for operations to be processed by the canonical mempool.
+这些规则概述了通过规范内存池处理操作的要求。
 
-Accounts can access its own storage during the validation phase, they might easily violate ERC-7562 storage access rules in undirect ways. For example, most accounts access their public keys from storage when validating a signature, limiting the ability of having accounts that validate operations for other accounts (e.g. via ERC-1271)
+账户可以在验证阶段访问其自身的存储，它们可能会以非直接的方式很容易地违反 ERC-7562 存储访问规则。例如，大多数账户在验证签名时从存储中访问其公钥，从而限制了拥有为其他账户验证操作的账户的能力（例如，通过 ERC-1271）。
 
-TIP: Although any Account that breaks such rules may still be processed by a private bundler, developers should keep in mind the centralization tradeoffs of relying on private infrastructure instead of _permissionless_ execution.
+TIP: 尽管任何违反此类规则的账户仍然可以由私有捆绑器处理，但开发者应牢记依赖私有基础设施而不是 _permissionless_ 执行的中心化权衡。

@@ -1,26 +1,26 @@
 = ERC-20
 
-An ERC-20 token contract keeps track of xref:tokens.adoc#different-kinds-of-tokens[_fungible_ tokens]: any one token is exactly equal to any other token; no tokens have special rights or behavior associated with them. This makes ERC-20 tokens useful for things like a *medium of exchange currency*, *voting rights*, *staking*, and more.
+ERC-20 token 合约跟踪 xref:tokens.adoc#different-kinds-of-tokens[*同质化* token]：任何一个 token 与任何其他 token 完全相等；没有 token 具有与其相关的特殊权利或行为。这使得 ERC-20 token 可用于*交换媒介货币*、*投票权*、*质押*等。
 
-OpenZeppelin Contracts provides many ERC20-related contracts. On the xref:api:token/ERC20.adoc[`API reference`] you'll find detailed information on their properties and usage.
+OpenZeppelin Contracts 提供了许多与 ERC20 相关的合约。在 xref:api:token/ERC20.adoc[`API 参考`] 中，你将找到有关其属性和用法的详细信息。
 
 [[constructing-an-erc20-token-contract]]
-== Constructing an ERC-20 Token Contract
+== 构建 ERC-20 Token 合约
 
-Using Contracts, we can easily create our own ERC-20 token contract, which will be used to track _Gold_ (GLD), an internal currency in a hypothetical game.
+使用 Contracts，我们可以轻松创建我们自己的 ERC-20 token 合约，该合约将用于跟踪 _Gold_ (GLD)，这是一款假设游戏中的内部货币。
 
-Here's what our GLD token might look like.
+这是我们的 GLD token 可能的样子。
 
 [source,solidity]
 ----
 include::api:example$token/ERC20/GLDToken.sol[]
 ----
 
-Our contracts are often used via https://solidity.readthedocs.io/en/latest/contracts.html#inheritance[inheritance], and here we're reusing xref:api:token/ERC20.adoc#erc20[`ERC20`] for both the basic standard implementation and the xref:api:token/ERC20.adoc#ERC20-name--[`name`], xref:api:token/ERC20.adoc#ERC20-symbol--[`symbol`], and xref:api:token/ERC20.adoc#ERC20-decimals--[`decimals`] optional extensions. Additionally, we're creating an `initialSupply` of tokens, which will be assigned to the address that deploys the contract.
+我们的合约通常通过 https://solidity.readthedocs.io/en/latest/contracts.html#inheritance[继承] 使用，在这里我们重用 xref:api:token/ERC20.adoc#erc20[`ERC20`] 用于基本标准实现以及 xref:api:token/ERC20.adoc#ERC20-name--[`name`]、xref:api:token/ERC20.adoc#ERC20-symbol--[`symbol`] 和 xref:api:token/ERC20.adoc#ERC20-decimals--[`decimals`] 可选扩展。此外，我们正在创建一个 `initialSupply` 的 token，它将被分配给部署合约的地址。
 
-TIP: For a more complete discussion of ERC-20 supply mechanisms, see xref:erc20-supply.adoc[Creating ERC-20 Supply].
+提示：有关 ERC-20 供应机制的更完整讨论，请参阅 xref:erc20-supply.adoc[创建 ERC-20 供应]。
 
-That's it! Once deployed, we will be able to query the deployer's balance:
+就是这样！部署后，我们将能够查询部署者的余额：
 
 [source,javascript]
 ----
@@ -28,7 +28,7 @@ That's it! Once deployed, we will be able to query the deployer's balance:
 1000000000000000000000
 ----
 
-We can also xref:api:token/ERC20.adoc#IERC20-transfer-address-uint256-[transfer] these tokens to other accounts:
+我们还可以将这些 token xref:api:token/ERC20.adoc#IERC20-transfer-address-uint256-[转移] 到其他帐户：
 
 [source,javascript]
 ----
@@ -40,19 +40,19 @@ We can also xref:api:token/ERC20.adoc#IERC20-transfer-address-uint256-[transfer]
 ----
 
 [[a-note-on-decimals]]
-== A Note on `decimals`
+== 关于 `decimals` 的注意事项
 
-Often, you'll want to be able to divide your tokens into arbitrary amounts: say, if you own `5 GLD`, you may want to send `1.5 GLD` to a friend, and keep `3.5 GLD` to yourself. Unfortunately, Solidity and the EVM do not support this behavior: only integer (whole) numbers can be used, which poses an issue. You may send `1` or `2` tokens, but not `1.5`.
+通常，你可能希望能够将你的 token 分成任意数量：例如，如果你拥有 `5 GLD`，你可能想将 `1.5 GLD` 发送给朋友，并将 `3.5 GLD` 留给自己。不幸的是，Solidity 和 EVM 不支持此行为：只能使用整数（整个）数字，这构成了一个问题。你可以发送 `1` 或 `2` 个 token，但不能发送 `1.5` 个。
 
-To work around this, xref:api:token/ERC20.adoc#ERC20[`ERC20`] provides a xref:api:token/ERC20.adoc#ERC20-decimals--[`decimals`] field, which is used to specify how many decimal places a token has. To be able to transfer `1.5 GLD`, `decimals` must be at least `1`, since that number has a single decimal place.
+为了解决这个问题，xref:api:token/ERC20.adoc#ERC20[`ERC20`] 提供了一个 xref:api:token/ERC20.adoc#ERC20-decimals--[`decimals`] 字段，用于指定 token 有多少位小数。为了能够转移 `1.5 GLD`，`decimals` 必须至少为 `1`，因为该数字有一位小数。
 
-How can this be achieved? It's actually very simple: a token contract can use larger integer values, so that a balance of `50` will represent `5 GLD`, a transfer of `15` will correspond to `1.5 GLD` being sent, and so on.
+如何实现这一目标？实际上非常简单：token 合约可以使用更大的整数值，因此 `50` 的余额将代表 `5 GLD`，`15` 的转移将对应于发送 `1.5 GLD`，依此类推。
 
-It is important to understand that `decimals` is _only used for display purposes_. All arithmetic inside the contract is still performed on integers, and it is the different user interfaces (wallets, exchanges, etc.) that must adjust the displayed values according to `decimals`. The total token supply and balance of each account are not specified in `GLD`: you need to divide by `10 ** decimals` to get the actual `GLD` amount.
+重要的是要理解 `decimals` *仅用于显示目的*。合约内部的所有算术仍然在整数上执行，并且必须由不同的用户界面（钱包、交易所等）根据 `decimals` 调整显示的值。每个帐户的 token 总供应量和余额未在 `GLD` 中指定：你需要除以 `10 ** decimals` 才能获得实际的 `GLD` 金额。
 
-You'll probably want to use a `decimals` value of `18`, just like Ether and most ERC-20 token contracts in use, unless you have a very special reason not to. When minting tokens or transferring them around, you will be actually sending the number `num GLD * (10 ** decimals)`.
+你可能想使用 `18` 的 `decimals` 值，就像 Ether 和大多数正在使用的 ERC-20 token 合约一样，除非你有非常特殊的原因不这样做。在铸造 token 或转移它们时，你实际上会发送数字 `num GLD * (10 ** decimals)`。
 
-NOTE: By default, `ERC20` uses a value of `18` for `decimals`. To use a different value, you will need to override the `decimals()` function in your contract.
+注意：默认情况下，`ERC20` 使用 `18` 作为 `decimals` 的值。要使用不同的值，你需要覆盖合约中的 `decimals()` 函数。
 
 ```solidity
 function decimals() public view virtual override returns (uint8) {
@@ -60,7 +60,7 @@ function decimals() public view virtual override returns (uint8) {
 }
 ```
 
-So if you want to send `5` tokens using a token contract with 18 decimals, the method to call will actually be:
+因此，如果你想使用具有 18 位小数的 token 合约发送 `5` 个 token，则实际调用的方法是：
 
 ```solidity
 transfer(recipient, 5 * (10 ** 18));

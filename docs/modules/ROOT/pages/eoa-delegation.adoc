@@ -1,35 +1,35 @@
-= EOA Delegation
+= EOA 委托
 
-https://eips.ethereum.org/EIPS/eip-7702[EIP-7702] introduces a new transaction type (`0x4`) that grants https://ethereum.org/en/developers/docs/accounts/[Externally Owned Accounts (EOAs)] the ability to delegate execution to an smart contract. This is particularly useful to enable traditional EVM accounts to:
+https://eips.ethereum.org/EIPS/eip-7702[EIP-7702] 引入了一种新的交易类型 (`0x4`)，它授予 https://ethereum.org/en/developers/docs/accounts/[外部拥有账户 (EOAs)] 将执行委托给智能合约的能力。这对于使传统的 EVM 账户能够做到以下几点特别有用：
 
-* Batch multiple operations in a single transaction (e.g. xref:api:token/ERC20.adoc#IERC20-approve-address-uint256-[`approve`] + xref:api:token/ERC20.adoc#IERC20-transfer-address-uint256-[`transfer`], yey!)
-* Sponsoring transactions for other users.
-* Implementing privilege de-escalation (e.g., sub-keys with limited permissions)
+* 在单个交易中批量处理多个操作（例如 xref:api:token/ERC20.adoc#IERC20-approve-address-uint256-[`approve`] + xref:api:token/ERC20.adoc#IERC20-transfer-address-uint256-[`transfer`], 太棒了!）
+* 为其他用户赞助交易。
+* 实施权限降级（例如，具有有限权限的子密钥）。
 
-This section walks you through the process of delegating an EOA to a contract following https://eips.ethereum.org/EIPS/eip-7702[ERC-7702]. This allows you to use your EOA's private key to sign and execute operations with custom execution logic. Combined with https://eips.ethereum.org/EIPS/eip-4337[ERC-4337] infrastructure, users can achieve gas sponsoring through https://docs.openzeppelin.com/community-contracts/paymasters[paymasters].
+本节将引导您完成遵循 https://eips.ethereum.org/EIPS/eip-7702[ERC-7702] 将 EOA 委托给合约的过程。这允许您使用 EOA 的私钥来签名并执行具有自定义执行逻辑的操作。结合 https://eips.ethereum.org/EIPS/eip-4337[ERC-4337] 基础设施，用户可以通过 https://docs.openzeppelin.com/community-contracts/paymasters[paymasters] 实现 gas 赞助。
 
-== Delegating execution
+== 委托执行
 
-EIP-7702 enables EOAs to delegate their execution capabilities to smart contracts, effectively bridging the gap between traditional and xref:accounts.adoc[Smart Accounts]. The xref:api:utils/cryptography.adoc#[`SignerERC7702`] utility facilitates this delegation by verifying signatures against the EOA's address (`address(this)`), making it easier to implement EIP-7702 in smart contract accounts.
+EIP-7702 使 EOA 能够将其执行能力委托给智能合约，从而有效地弥合了传统账户和 xref:accounts.adoc[智能账户] 之间的差距。xref:api:utils/cryptography.adoc#[`SignerERC7702`] 实用程序通过验证针对 EOA 地址 (`address(this)`) 的签名来促进这种委托，从而更容易在智能合约账户中实现 EIP-7702。
 
 [source,solidity]
 ----
 include::api:example$account/MyAccountERC7702.sol[]
 ----
 
-TIP: Users can delegate to an instance of xref:api:account.adoc#ERC7821[`ERC-7821`] for a minimal batch executor that does not use ERC-4337 related code.
+TIP: 用户可以委托给 xref:api:account.adoc#ERC7821[`ERC-7821`] 的实例，以获得一个不使用 ERC-4337 相关代码的最小批量执行器。
 
-=== Signing Authorization
+=== 签名授权
 
-To authorize delegation, the EOA owner signs a message containing the chain ID, nonce, delegation address, and signature components (i.e. `[chain_id, address, nonce, y_parity, r, s]`). This signed authorization serves two purposes: it restricts execution to only the delegate contract and prevents replay attacks.
+要授权委托，EOA 所有者需要对包含链 ID、nonce、委托地址和签名组件的消息进行签名 (即 `[chain_id, address, nonce, y_parity, r, s]`)。此签名授权有两个目的：它将执行限制为仅委托合约，并防止重放攻击。
 
-The EOA maintains a delegation designator for each authorized address on each chain, which points to the contract whose code will be executed in the EOA's context to handle delegated operations.
+EOA 为每个链上的每个授权地址维护一个委托指示符，该指示符指向合约，该合约的代码将在 EOA 的上下文中执行以处理委托的操作。
 
-Here's how to construct an authorization with https://viem.sh/[viem]:
+以下是如何使用 https://viem.sh/[viem] 构建授权：
 
 [source, typescript]
 ----
-// Remember not to hardcode your private key! 
+// 记住不要硬编码你的私钥！
 const eoa = privateKeyToAccount('<YOUR_PRIVATE_KEY>');
 const eoaClient = createWalletClient({
   account: eoa,
@@ -38,7 +38,7 @@ const eoaClient = createWalletClient({
 });
 
 const walletClient = createWalletClient({
-  account, // See Viem's `privateKeyToAccount`
+  account, // 参考 Viem 的 `privateKeyToAccount`
   chain, // import { ... } from 'viem/chains';
   transport: http(),
 })
@@ -46,22 +46,22 @@ const walletClient = createWalletClient({
 const authorization = await eoaClient.signAuthorization({
   account: walletClient.account.address,
   contractAddress: '0x<YOUR_DELEGATE_CONTRACT_ADDRESS>',
-  // Use instead of `account` if your 
-  // walletClient's account is the one sending the transaction
+  // 如果你的 walletClient 的 account 是发送交易的 account，
+  // 则使用此字段代替 `account`
   // executor: "self",
 });
 ----
 
-NOTE: When implementing delegate contracts, ensure they require signatures that avoid replayability (e.g. a domain separator, nonce).
-A poorly implemented delegate can allow a malicious actor to take near complete control over a signer's EOA.
+NOTE: 在实施委托合约时，请确保它们需要的签名可以避免重放性（例如，域分隔符，nonce）。
+实施不佳的委托可能会让恶意行为者几乎完全控制签名者的 EOA。
 
-=== Send a Set Code Transaction
+=== 发送设置代码交易
 
-After signing the authorization, you need to send a `SET_CODE_TX_TYPE` (0x04) transaction to write the delegation designator (i.e. `0xef0100 || address`) to your EOA's code, which tells the EVM to load and execute code from the specified address when operations are performed on your EOA.
+签署授权后，您需要发送一个 `SET_CODE_TX_TYPE` (0x04) 交易，将委托指示符 (即 `0xef0100 || address`) 写入您的 EOA 代码，这将告诉 EVM 加载和执行来自指定地址的代码，当在您的 EOA 上执行操作时。
 
 [source, typescript]
 ----
-// Send the `authorization` along with `data`
+// 发送包含 `authorization` 的 `data`
 const receipt = await walletClient
   .sendTransaction({
     authorizationList: [authorization],
@@ -74,25 +74,25 @@ const receipt = await walletClient
     })
   );
 
-// Print receipt
+// 打印收据
 console.log(userOpReceipt);
 ----
 
-To remove the delegation and restore your EOA to its original state, you can send a `SET_CODE_TX_TYPE` transaction with an authorization tuple that points to the zero address (`0x0000000000000000000000000000000000000000`). This will clear the account's code and reset its code hash to the empty hash, however, be aware that it will not automatically clean the EOA storage.
+要删除委托并将您的 EOA 恢复到原始状态，您可以发送一个授权元组指向零地址 (`0x0000000000000000000000000000000000000000`) 的 `SET_CODE_TX_TYPE` 交易。这将清除帐户的代码并将其代码哈希重置为空哈希，但是，请注意，它不会自动清理 EOA 存储。
 
-When changing an account's delegation, ensure the newly delegated code is purposely designed and tested as an upgrade to the old one. To ensure safe migration between delegate contracts, namespaced storage that avoid accidental collisions following ERC-7201. 
+在更改帐户的委托时，请确保新委托的代码经过专门设计和测试，可以作为对旧代码的升级。为了确保委托合约之间安全迁移，请遵循 ERC-7201 使用避免意外冲突的命名空间存储。
 
-WARNING: Updating the delegation designator may render your EOA unusable due to potential storage collisions. We recommend following similar practices to those of https://docs.openzeppelin.com/upgrades-plugins/writing-upgradeable[writing upgradeable smart contracts].
+WARNING: 由于潜在的存储冲突，更新委托指示符可能会导致您的 EOA 无法使用。我们建议遵循与 https://docs.openzeppelin.com/upgrades-plugins/writing-upgradeable[编写可升级智能合约] 相似的做法。
 
-== Using with ERC-4337
+== 与 ERC-4337 一起使用
 
-The ability to set code to execute logic on an EOA allows users to leverage ERC-4337 infrastructure to process user operations. Developers only need to combine an xref:api:account.adoc#Account[`Account`] contract with an xref:api:utils/cryptography.adoc#SignerERC7702[`SignerERC7702`] to accomplish ERC-4337 compliance out of the box.
+在 EOA 上设置代码以执行逻辑的能力允许用户利用 ERC-4337 基础设施来处理用户操作。开发人员只需要将 xref:api:account.adoc#Account[`Account`] 合约与 xref:api:utils/cryptography.adoc#SignerERC7702[`SignerERC7702`] 结合起来，即可实现开箱即用的 ERC-4337 兼容性。
 
-=== Sending a UserOp
+=== 发送 UserOp
 
-Once your EOA is delegated to an ERC-4337 compatible account, you can send user operations through the entry point contract. The user operation includes all the necessary fields for execution, including gas limits, fees, and the actual call data to execute. The entry point will validate the operation and execute it in the context of your delegated account.
+一旦您的 EOA 委托给 ERC-4337 兼容帐户，您就可以通过入口点合约发送用户操作。用户操作包括所有必要的执行字段，包括 gas 限制、费用以及要执行的实际调用数据。入口点将验证操作并在您委托帐户的上下文中执行它。
 
-Similar to how xref:accounts.adoc#bundle_a_useroperation[sending a UserOp] is achieved for factory accounts, here's how you can construct a UserOp for an EOA who's delegated to an xref:api:account.adoc#Account[`Account`] contract.
+类似于 xref:accounts.adoc#bundle_a_useroperation[发送 UserOp] 是如何为工厂帐户实现的，以下是如何为委托给 xref:api:account.adoc#Account[`Account`] 合约的 EOA 构建 UserOp。
 
 [source, typescript]
 ----
@@ -140,4 +140,4 @@ const userOpReceipt = await eoaClient
 console.log(userOpReceipt);
 ----
 
-NOTE: When using sponsored transaction relayers, be aware that the authorized account can cause relayers to spend gas without being reimbursed by either invalidating the authorization (increasing the account's nonce) or by sweeping the relevant assets out of the account. Relayers may implement safeguards like requiring a bond or using a reputation system.
+NOTE: 当使用赞助交易中继器时，请注意，授权帐户可能会导致中继器花费 gas 而未获得报销，方法是使授权无效（增加帐户的 nonce）或将相关资产从帐户中扫出。中继器可以实施保护措施，例如要求保证金或使用声誉系统。

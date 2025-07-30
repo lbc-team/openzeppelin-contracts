@@ -1,13 +1,13 @@
-= Frequently Asked Questions
+= 常见问题
 
-== Can I restrict a function to EOAs only?
+== 我可以限制一个函数只能由 EOA 调用吗？
 
-When calling external addresses from your contract it is unsafe to assume that an address is an externally-owned account (EOA) and not a contract. Attempting to prevent calls from contracts is highly discouraged. It breaks composability, breaks support for smart wallets like Gnosis Safe, and does not provide security since it can be circumvented by calling from a contract constructor.
+当从你的合约中调用外部地址时，假设一个地址是外部拥有账户 (EOA) 而不是合约是不安全的。强烈建议不要尝试阻止来自合约的调用。这会破坏可组合性，破坏对 Gnosis Safe 等智能钱包的支持，并且不提供安全性，因为它可以通过从合约构造函数调用来规避。
 
-Although checking that the address has code, `address.code.length > 0`, may seem to differentiate contracts from EOAs, it can only say that an address is currently a contract, and its negation (that an address is not currently a contract) does not imply that the address is an EOA. Some counterexamples are:
+虽然检查地址是否有代码 `address.code.length > 0` 似乎可以将合约与 EOA 区分开来，但它只能说明一个地址当前是一个合约，并且它的否定（一个地址当前不是一个合约）并不意味着该地址是一个 EOA。一些反例是：
 
- - address of a contract in construction
- - address where a contract will be created
- - address where a contract lived, but was destroyed
+ - 正在构建中的合约的地址
+ - 将要创建合约的地址
+ - 合约曾经存在但已被销毁的地址
 
-Furthermore, an address will be considered a contract within the same transaction where it is scheduled for destruction by `SELFDESTRUCT`, which only has an effect at the end of the entire transaction.
+此外，在同一交易中，一个地址将被视为一个合约，在该交易中，它被 `SELFDESTRUCT` 安排销毁，而 `SELFDESTRUCT` 仅在整个交易结束时生效。

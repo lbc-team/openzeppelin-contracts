@@ -1,31 +1,31 @@
-= Tokens
+= 代币
 
-Ah, the "token": blockchain's most powerful and most misunderstood tool.
+啊，"代币"：区块链最强大也是最容易被误解的工具。
 
-A token is a _representation of something in the blockchain_. This something can be money, time, services, shares in a company, a virtual pet, anything. By representing things as tokens, we can allow smart contracts to interact with them, exchange them, create or destroy them.
+代币是_区块链中某事物的表示形式_。这个事物可以是金钱、时间、服务、公司股份、虚拟宠物，任何东西。通过将事物表示为代币，我们可以允许智能合约与它们交互、交换它们、创建或销毁它们。
 
 [[but_first_coffee_a_primer_on_token_contracts]]
-== But First, [strikethrough]#Coffee# a Primer on Token Contracts
+== 首先，[strikethrough]#咖啡# 代币合约入门
 
-Much of the confusion surrounding tokens comes from two concepts getting mixed up: _token contracts_ and the actual _tokens_.
+围绕代币的许多困惑来自于两个概念的混淆：_代币合约_和实际的_代币_。
 
-A _token contract_ is simply an Ethereum smart contract. "Sending tokens" actually means "calling a method on a smart contract that someone wrote and deployed". At the end of the day, a token contract is not much more than a mapping of addresses to balances, plus some methods to add and subtract from those balances.
+_代币合约_ 仅仅是一个 Ethereum 智能合约。"发送代币" 实际上意味着 "调用某人编写和部署的智能合约上的一个方法"。归根结底，代币合约只不过是地址到余额的映射，加上一些增加和减少这些余额的方法。
 
-It is these balances that represent the _tokens_ themselves. Someone "has tokens" when their balance in the token contract is non-zero. That's it! These balances could be considered money, experience points in a game, deeds of ownership, or voting rights, and each of these tokens would be stored in different token contracts.
+正是这些余额代表了_代币_本身。当某人在代币合约中的余额非零时，他们就 "拥有代币"。就是这样！这些余额可以被认为是金钱、游戏中的经验值、所有权契据或投票权，并且这些代币中的每一个都将存储在不同的代币合约中。
 
 [[different-kinds-of-tokens]]
-== Different Kinds of Tokens
+== 不同类型的代币
 
-Note that there's a big difference between having two voting rights and two deeds of ownership: each vote is equal to all others, but houses usually are not! This is called https://en.wikipedia.org/wiki/Fungibility[fungibility]. _Fungible goods_ are equivalent and interchangeable, like Ether, fiat currencies, and voting rights. _Non-fungible_ goods are unique and distinct, like deeds of ownership, or collectibles.
+请注意，拥有两张选票和两份所有权契据之间存在很大差异：每张选票与其他所有选票相同，但房屋通常不是！这被称为 https://en.wikipedia.org/wiki/Fungibility[可替代性]。 _可替代商品_ 是等价且可互换的，例如 Ether、法定货币和投票权。 _不可替代商品_ 是独一无二且截然不同的，例如所有权契据或收藏品。
 
-In a nutshell, when dealing with non-fungibles (like your house) you care about _which ones_ you have, while in fungible assets (like your bank account statement) what matters is _how much_ you have.
+简而言之，在处理不可替代品（例如你的房子）时，你在乎你拥有_哪些_，而在处理可替代资产（例如你的银行对账单）时，重要的是你拥有_多少_。
 
-== Standards
+== 标准
 
-Even though the concept of a token is simple, they have a variety of complexities in the implementation. Because everything in Ethereum is just a smart contract, and there are no rules about what smart contracts have to do, the community has developed a variety of *standards* (called EIPs or ERCs) for documenting how a contract can interoperate with other contracts.
+即使代币的概念很简单，但它们的实现方式却多种多样。因为 Ethereum 中的一切都只是一个智能合约，并且没有关于智能合约必须做什么的规则，所以社区开发了各种*标准*（称为 EIP 或 ERC），用于记录合约如何与其他合约互操作。
 
-You've probably heard of the ERC-20 or ERC-721 token standards, and that's why you're here. Head to our specialized guides to learn more about these:
+你可能听说过 ERC-20 或 ERC-721 代币标准，这就是你来这里的原因。请访问我们的专门指南以了解更多信息：
 
- * xref:erc20.adoc[ERC-20]: the most widespread token standard for fungible assets, albeit somewhat limited by its simplicity.
- * xref:erc721.adoc[ERC-721]: the de-facto solution for non-fungible tokens, often used for collectibles and games.
- * xref:erc1155.adoc[ERC-1155]: a novel standard for multi-tokens, allowing for a single contract to represent multiple fungible and non-fungible tokens, along with batched operations for increased gas efficiency.
+ * xref:erc20.adoc[ERC-20]：最广泛使用的可替代资产代币标准，尽管其简单性有些限制。
+ * xref:erc721.adoc[ERC-721]：不可替代代币的事实上的解决方案，通常用于收藏品和游戏。
+ * xref:erc1155.adoc[ERC-1155]：一种新颖的多代币标准，允许单个合约表示多个可替代和不可替代代币，以及用于提高 Gas 效率的批量操作。

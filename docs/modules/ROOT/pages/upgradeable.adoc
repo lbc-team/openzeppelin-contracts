@@ -1,24 +1,24 @@
-= Using with Upgrades
+= 升级使用
 
-If your contract is going to be deployed with upgradeability, such as using the xref:upgrades-plugins::index.adoc[OpenZeppelin Upgrades Plugins], you will need to use the Upgradeable variant of OpenZeppelin Contracts.
+如果你的合约将要通过可升级性进行部署，例如使用 xref:upgrades-plugins::index.adoc[OpenZeppelin Upgrades Plugins]，那么你需要使用 OpenZeppelin Contracts 的可升级变体。
 
-This variant is available as a separate package called `@openzeppelin/contracts-upgradeable`, which is hosted in the repository https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable[OpenZeppelin/openzeppelin-contracts-upgradeable]. It uses `@openzeppelin/contracts` as a peer dependency.
+这个变体版本以一个单独的包 `@openzeppelin/contracts-upgradeable` 提供，它托管在 https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable[OpenZeppelin/openzeppelin-contracts-upgradeable] 仓库中。它使用 `@openzeppelin/contracts` 作为 peer dependency。
 
-It follows all of the rules for xref:upgrades-plugins::writing-upgradeable.adoc[Writing Upgradeable Contracts]: constructors are replaced by initializer functions, state variables are initialized in initializer functions, and we additionally check for storage incompatibilities across minor versions.
+它遵循 xref:upgrades-plugins::writing-upgradeable.adoc[编写可升级合约] 的所有规则：构造函数被初始化函数替代，状态变量在初始化函数中初始化，并且我们还会检查跨小版本之间的存储不兼容性。
 
-TIP: OpenZeppelin provides a full suite of tools for deploying and securing upgradeable smart contracts. xref:openzeppelin::upgrades.adoc[Check out the full list of resources].
+提示：OpenZeppelin 提供了一整套用于部署和保护可升级智能合约的工具。xref:openzeppelin::upgrades.adoc[查看完整的资源列表]。
 
-== Overview
+== 概述
 
-=== Installation
+=== 安装
 
 ```console
 $ npm install @openzeppelin/contracts-upgradeable @openzeppelin/contracts
 ```
 
-=== Usage
+=== 用法
 
-The Upgradeable package replicates the structure of the main OpenZeppelin Contracts package, but every file and contract has the suffix `Upgradeable`.
+Upgradeable 包复制了主 OpenZeppelin Contracts 包的结构，但是每个文件和合约都有后缀 `Upgradeable`。
 
 ```diff
 -import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -28,9 +28,9 @@ The Upgradeable package replicates the structure of the main OpenZeppelin Contra
 +contract MyCollectible is ERC721Upgradeable {
 ```
 
-NOTE: Interfaces and libraries are not included in the Upgradeable package, but are instead imported from the main OpenZeppelin Contracts package.
+注意：接口和库不包含在 Upgradeable 包中，而是从主 OpenZeppelin Contracts 包中导入。
 
-Constructors are replaced by internal initializer functions following the naming convention `+__{ContractName}_init+`. Since these are internal, you must always define your own public initializer function and call the parent initializer of the contract you extend.
+构造函数被内部初始化函数替代，遵循命名约定 `+__{ContractName}_init+`。由于这些是内部函数，你必须始终定义你自己的 public 初始化函数，并调用你所继承的合约的父初始化函数。
 
 ```diff
 -    constructor() ERC721("MyCollectible", "MCO") public {
@@ -39,9 +39,9 @@ Constructors are replaced by internal initializer functions following the naming
      }
 ```
 
-CAUTION: Use with multiple inheritance requires special attention. See the section below titled <<multiple-inheritance>>.
+注意：与多重继承一起使用需要特别注意。请参阅下面标题为 <<multiple-inheritance>> 的部分。
 
-Once this contract is set up and compiled, you can deploy it using the xref:upgrades-plugins::index.adoc[Upgrades Plugins]. The following snippet shows an example deployment script using Hardhat.
+一旦这个合约设置并编译好，你可以使用 xref:upgrades-plugins::index.adoc[Upgrades Plugins] 部署它。下面的代码片段展示了一个使用 Hardhat 的部署脚本示例。
 
 ```js
 // scripts/deploy-my-collectible.js
@@ -59,19 +59,19 @@ async function main() {
 main();
 ```
 
-== Further Notes
+== 更多注意事项
 
 [[multiple-inheritance]]
-=== Multiple Inheritance
+=== 多重继承
 
-Initializer functions are not linearized by the compiler like constructors. Because of this, each `+__{ContractName}_init+` function embeds the linearized calls to all parent initializers. As a consequence, calling two of these `init` functions can potentially initialize the same contract twice.
+初始化函数不会像构造函数一样被编译器线性化。因此，每个 `+__{ContractName}_init+` 函数嵌入了对所有父初始化函数的线性化调用。因此，调用其中两个 `init` 函数可能会多次初始化同一个合约。
 
-The function `+__{ContractName}_init_unchained+` found in every contract is the initializer function minus the calls to parent initializers, and can be used to avoid the double initialization problem, but doing this manually is not recommended. We hope to be able to implement safety checks for this in future versions of the Upgrades Plugins.
+在每个合约中找到的函数 `+__{ContractName}_init_unchained+` 是初始化函数减去对父初始化函数的调用，可用于避免重复初始化问题，但不建议手动执行此操作。我们希望能够在未来版本的 Upgrades Plugins 中为此实现安全检查。
 
-=== Namespaced Storage
+=== 命名空间存储
 
-You may notice that contracts use a struct with the `@custom:storage-location erc7201:<NAMESPACE_ID>` annotation to store the contract's state variables. This follows the https://eips.ethereum.org/EIPS/eip-7201[ERC-7201: Namespaced Storage Layout] pattern, where each contract has its own storage layout in a namespace that is separate from other contracts in the inheritance chain.
+你可能会注意到，合约使用带有 `@custom:storage-location erc7201:<NAMESPACE_ID>` 注释的结构体来存储合约的状态变量。这遵循 https://eips.ethereum.org/EIPS/eip-7201[ERC-7201: 命名空间存储布局] 模式，其中每个合约在与其继承链中的其他合约分离的命名空间中都有自己的存储布局。
 
-Without namespaced storage, it isn't safe to simply add a state variable because it "shifts down" all of the state variables below in the inheritance chain. This makes the storage layouts incompatible, as explained in xref:upgrades-plugins::writing-upgradeable.adoc#modifying-your-contracts[Writing Upgradeable Contracts].
+如果没有命名空间存储，简单地添加一个状态变量是不安全的，因为它会“向下移动”继承链中下面的所有状态变量。这使得存储布局不兼容，如 xref:upgrades-plugins::writing-upgradeable.adoc#modifying-your-contracts[编写可升级合约] 中所述。
 
-The namespaced storage pattern used in the Upgradeable package allows us to freely add new state variables in the future without compromising the storage compatibility with existing deployments. It also allows changing the inheritance order with no impact on the resulting storage layout, as long as all inherited contracts use namespaced storage.
+Upgradeable 包中使用的命名空间存储模式允许我们在未来自由添加新的状态变量，而不会损害与现有部署的存储兼容性。它还允许更改继承顺序，而不会对生成的存储布局产生影响，只要所有继承的合约都使用命名空间存储。

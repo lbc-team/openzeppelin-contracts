@@ -1,29 +1,29 @@
-* xref:index.adoc[Overview]
-* xref:wizard.adoc[Wizard]
-* xref:extending-contracts.adoc[Extending Contracts]
-* xref:upgradeable.adoc[Using with Upgrades]
+* xref:index.adoc[概述]
+* xref:wizard.adoc[向导]
+* xref:extending-contracts.adoc[扩展合约]
+* xref:upgradeable.adoc[与 Upgrades 一起使用]
 
-* xref:backwards-compatibility.adoc[Backwards Compatibility]
+* xref:backwards-compatibility.adoc[向后兼容性]
 
-* xref:access-control.adoc[Access Control]
+* xref:access-control.adoc[访问控制]
 
-* xref:account-abstraction.adoc[Account Abstraction]
-** xref:accounts.adoc[Accounts]
-*** xref:eoa-delegation.adoc[EOA Delegation]
-*** xref:multisig.adoc[Multisig]
+* xref:account-abstraction.adoc[账户抽象]
+** xref:accounts.adoc[账户]
+*** xref:eoa-delegation.adoc[EOA 委托]
+*** xref:multisig.adoc[多重签名]
 
-* xref:tokens.adoc[Tokens]
+* xref:tokens.adoc[代币]
 ** xref:erc20.adoc[ERC-20]
-*** xref:erc20-supply.adoc[Creating Supply]
+*** xref:erc20-supply.adoc[创建供应]
 ** xref:erc721.adoc[ERC-721]
 ** xref:erc1155.adoc[ERC-1155]
 ** xref:erc4626.adoc[ERC-4626]
 ** xref:erc6909.adoc[ERC-6909]
 
-* xref:governance.adoc[Governance]
+* xref:governance.adoc[治理]
 
-* xref:utilities.adoc[Utilities]
+* xref:utilities.adoc[实用工具]
 
-* xref:subgraphs::index.adoc[Subgraphs]
+* xref:subgraphs::index.adoc[子图]
 
-* xref:faq.adoc[FAQ]
+* xref:faq.adoc[常见问题解答]
